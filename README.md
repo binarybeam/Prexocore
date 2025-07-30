@@ -36,11 +36,8 @@ All components are internally bundled. No XML configuration or external layout f
 To use this library, add the following dependency in your `build.gradle`:
 
 ```kotlin
-implementation("com.prexoft:prexocore:<latest-version>")
+implementation("com.prexoft:prexocore:1.0.2")
 ```
-
-> Replace `<latest-version>` with the current release version.
-
 ---
 
 ## 📱 Activity Utilities
@@ -299,7 +296,7 @@ file.read()
 
 ## 📄 License
 
-This library is distributed under the APACHE 2.0 LICENSE.
+This library is distributed under the APACHE-2.0 LICENSE.
 
 ---
 
