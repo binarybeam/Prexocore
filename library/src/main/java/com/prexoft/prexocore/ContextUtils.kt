@@ -1,9 +1,7 @@
 package com.prexoft.prexocore
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlarmManager
 import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -19,7 +17,6 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -35,17 +32,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.graphics.toColorInt
 import kotlin.reflect.KClass
 import kotlin.toString
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
-import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 fun Context.havePermission(permission: String): Boolean {
     return havePermission(listOf(permission))
@@ -321,6 +312,7 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
     dialog.show()
 }
 
+@RequiresApi(Build.VERSION_CODES.M)
 fun Context.isNetworkAvailable(): Boolean {
     val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val network = connectivityManager.activeNetwork ?: return false
@@ -338,11 +330,12 @@ fun Context.isDarkTheme(): Boolean {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.N)
 fun Context.postNotification(
     title: String,
     content: String,
     notificationId: Int = 1,
-    smallIcon: Int = R.mipmap.ic_launcher,
+    smallIcon: Int,
     launchIntent: Intent? = null,
     channelId: String = "channel_1",
     channelName: String = "General Notifications",

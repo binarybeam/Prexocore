@@ -336,30 +336,32 @@ fun ScrollView.onScroll (
     percentCallback: ((Int) -> Unit)? = null
 ) {
     var lastState = 0
-    setOnScrollChangeListener { _, _, scrollY, _, _ ->
-        val maxScroll = max(getChildAt(0).measuredHeight - height, 1)
-        val percent = ((scrollY.toFloat() / maxScroll) * 100).roundToInt().coerceIn(0, 100)
-        percentCallback?.invoke(percent)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            val maxScroll = max(getChildAt(0).measuredHeight - height, 1)
+            val percent = ((scrollY.toFloat() / maxScroll) * 100).roundToInt().coerceIn(0, 100)
+            percentCallback?.invoke(percent)
 
-        when {
-            scrollY == 0 -> {
-                if (lastState != 0) {
-                    lastState = 0
-                    context.vibrate(legacyFallback = false, minimal = true)
-                    onTop()
+            when {
+                scrollY == 0 -> {
+                    if (lastState != 0) {
+                        lastState = 0
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onTop()
+                    }
                 }
-            }
-            scrollY >= maxScroll -> {
-                if (lastState != 1) {
-                    lastState = 1
-                    context.vibrate(legacyFallback = false, minimal = true)
-                    onBottom()
+                scrollY >= maxScroll -> {
+                    if (lastState != 1) {
+                        lastState = 1
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onBottom()
+                    }
                 }
-            }
-            else -> {
-                if (lastState != 2) {
-                    lastState = 2
-                    other()
+                else -> {
+                    if (lastState != 2) {
+                        lastState = 2
+                        other()
+                    }
                 }
             }
         }
@@ -373,30 +375,32 @@ fun HorizontalScrollView.onScroll (
     percentCallback: ((Int) -> Unit)? = null
 ) {
     var lastState = 0
-    setOnScrollChangeListener { _, scrollX, _, _, _ ->
-        val maxScroll = max(getChildAt(0).measuredHeight - height, 1)
-        val percent = ((scrollX.toFloat() / maxScroll) * 100).roundToInt().coerceIn(0, 100)
-        percentCallback?.invoke(percent)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            val maxScroll = max(getChildAt(0).measuredHeight - height, 1)
+            val percent = ((scrollX.toFloat() / maxScroll) * 100).roundToInt().coerceIn(0, 100)
+            percentCallback?.invoke(percent)
 
-        when {
-            scrollX == 0 -> {
-                if (lastState != 0) {
-                    lastState = 0
-                    context.vibrate(legacyFallback = false, minimal = true)
-                    onTop()
+            when {
+                scrollX == 0 -> {
+                    if (lastState != 0) {
+                        lastState = 0
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onTop()
+                    }
                 }
-            }
-            scrollX >= maxScroll -> {
-                if (lastState != 1) {
-                    lastState = 1
-                    context.vibrate(legacyFallback = false, minimal = true)
-                    onBottom()
+                scrollX >= maxScroll -> {
+                    if (lastState != 1) {
+                        lastState = 1
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onBottom()
+                    }
                 }
-            }
-            else -> {
-                if (lastState != 2) {
-                    lastState = 2
-                    other()
+                else -> {
+                    if (lastState != 2) {
+                        lastState = 2
+                        other()
+                    }
                 }
             }
         }

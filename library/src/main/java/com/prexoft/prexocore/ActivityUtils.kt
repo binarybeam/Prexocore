@@ -31,7 +31,9 @@ import java.util.Locale
 import androidx.core.graphics.createBitmap
 
 fun Activity.getPermission(permissions: List<String>, requestCode: Int = 100) {
-    this.requestPermissions(permissions.toTypedArray(), requestCode)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        this.requestPermissions(permissions.toTypedArray(), requestCode)
+    }
 }
 
 fun Activity.isKeyboardOpen(): Boolean {

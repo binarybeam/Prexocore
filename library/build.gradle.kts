@@ -1,5 +1,5 @@
 plugins {
-    id("com.android.library") version "8.4.2"
+    id("com.android.library") version "8.11.1"
     kotlin("android") version "1.9.10"
 }
 
@@ -29,5 +29,12 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
