@@ -1,11 +1,20 @@
 package com.prexoft.prexocore
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
+
+fun now(): Long {
+    return System.currentTimeMillis()
+}
 
 object EasyTts {
     private var tts: TextToSpeech? = null
@@ -111,4 +120,29 @@ object EasyTts {
         initializing = false
         pendingQueue.clear()
     }
+}
+
+class Permission(activity: ComponentActivity) {
+    private var currentPermission: String? = null
+    private val callbackMap = mutableMapOf<String, (Boolean) -> Unit>()
+
+    private val launcher = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        currentPermission?.let { perm ->
+            callbackMap.remove(perm)?.invoke(granted)
+            currentPermission = null
+        }
+    }
+
+    fun request(permission: String, callback: (Boolean) -> Unit = {}) {
+        if (currentPermission != null) {
+            throw IllegalStateException("Another permission request is in flight")
+        }
+        currentPermission = permission
+        callbackMap[permission] = callback
+        launcher.launch(permission)
+    }
+}
+
+fun optimisedMultiPhotos(photos: List<Pair<Bitmap, String>>): Bitmap {
+    return photos.optimisedMultiPhotos()
 }

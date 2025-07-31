@@ -3,6 +3,7 @@ package com.prexoft.prexocore
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Paint
 import android.net.Uri
 import android.net.http.HttpException
 import android.os.Build
@@ -10,6 +11,8 @@ import android.text.Html
 import android.text.Spanned
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import androidx.core.text.toSpanned
 import java.io.File
 import java.io.IOException
@@ -215,6 +218,10 @@ fun String.writeInternalFile(context: Context, fileName: String): String {
     return this
 }
 
+fun Any?.similar(other: Any?): Boolean {
+    return this.toString().lowercase() == other.toString().lowercase()
+}
+
 fun Int.fromDpToPx(context: Context): Int = context.dpToPx(this)
 fun Int.fromPxToDp(context: Context): Double = context.pxToDp(this)
 
@@ -248,4 +255,45 @@ fun parseInlineMarkdown(text: String): String {
         .replace(Regex("\\*\\*\\*(.+?)\\*\\*\\*"), "<strong><em>$1</em></strong>")
         .replace(Regex("\\*\\*(.+?)\\*\\*"), "<strong>$1</strong>")
         .replace(Regex("\\*(.+?)\\*"), "<em>$1</em>")
+}
+
+fun List<Pair<Bitmap, String>>.optimisedMultiPhotos(): Bitmap {
+    val imageSize = 200
+    val captionHeight = 40
+    val totalHeight = imageSize + captionHeight
+    val cols = 4
+    val rows = (this.size + cols - 1)/cols
+
+    val width = cols * imageSize
+    val height = rows * totalHeight
+    val data = createBitmap(width, height)
+    val canvas = android.graphics.Canvas(data)
+
+    val paint = Paint().apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.FILL
+    }
+
+    canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+    val textPaint = Paint().apply {
+        color = android.graphics.Color.BLACK
+        textSize = 24f
+        isAntiAlias = true
+        textAlign = Paint.Align.CENTER
+    }
+
+    for (i in this.indices) {
+        val row = i / cols
+        val col = i % cols
+        val x = col * imageSize
+        val y = row * totalHeight
+
+        val (bitmap, timestamp) = this[i]
+        val scaledBitmap = bitmap.scale(imageSize, imageSize)
+
+        canvas.drawBitmap(scaledBitmap, x.toFloat(), y.toFloat(), null)
+        canvas.drawText(timestamp, (x + imageSize / 2).toFloat(), (y + imageSize + 30).toFloat(), textPaint)
+        scaledBitmap.recycle()
+    }
+    return data
 }

@@ -65,16 +65,6 @@ fun Activity.snack(message: Any?, action: String? = "", duration: Int = Snackbar
 
 fun Activity.view(@IdRes id: Int): View = findViewById(id)
 
-fun ComponentActivity.getPermission(
-    permission: String,
-    callback: (Boolean) -> Unit = { }
-) {
-    val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        callback(it)
-    }
-    launcher.launch(permission)
-}
-
 fun LifecycleOwner.observeNetworkStatus(
     context: Context,
     onStatusChanged: (Boolean) -> Unit

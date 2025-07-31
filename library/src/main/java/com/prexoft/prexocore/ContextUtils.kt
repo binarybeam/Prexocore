@@ -295,7 +295,7 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
 
     main.onClick { }
     button.onClick {
-        if (required && inputView.text.toString().isBlank()) toast("This field is required.")
+        if (required && inputView.text.toString().isBlank()) safeToast("This field is required.", gapInSeconds = 5)
         else {
             onResult(inputView.text.toString())
             dialog.dismiss()
