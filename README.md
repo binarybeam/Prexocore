@@ -36,21 +36,21 @@ All components are internally bundled. No XML configuration or external layout f
 To use this library, add the following dependency in your `build.gradle`:
 
 ```kotlin
-    dependencies {
-        implementation("com.github.binarybeam:Prexocore:1.0.0")
-    }
+dependencies {
+    implementation("com.github.binarybeam:Prexocore:1.0.0")
+}
 ```
 
 Add it in your settings.gradle.kts at the end of repositories:
 
 ```kotlin
-	dependencyResolutionManagement {
-		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-		repositories {
-                	mavenCentral()
-			maven { url = uri("https://jitpack.io") }
-               }
-	}
+dependencyResolutionManagement {
+     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+     repositories {
+          mavenCentral()
+          maven { uri("https://jitpack.io") }
+     }
+}
 ```
 ---
 
