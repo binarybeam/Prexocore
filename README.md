@@ -47,20 +47,6 @@ All utilities work in any `Context`, `Activity`, or `Fragment`. Prexocore detect
 
 ---
 
-### Intelligent Feedback System
-
-#### Smart Toasts & Vibrations
-```kotlin
-toast("Simple Message")        
-safeToast("Debounced Message")  // One toast at a time
-vibrate()                       // Tactile feedback
-```
-
-#### Snackbar with Action
-```kotlin
-snack("Message", "Retry") { clicked ->  }
-```
-
 #### Notifications
 ```kotlin
 postNotification(
@@ -99,6 +85,13 @@ view.onClick { ... }                        // With enahanced feedback
 view.onSafeClick(seconds = 1.5) { ... }     // Avoid multiple clicks frequently
 view.onFirstClick { ... }                   // One-time only click
 view.onDoubleClick { ... }
+```
+
+#### Smart Messages
+```kotlin
+toast("Simple Message")        
+safeToast("Debounced Message")  // One toast at a time
+snack("Message", "Retry") { clicked ->  }
 ```
 
 #### Redirects & Navigation Bindings
