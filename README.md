@@ -179,7 +179,7 @@ after(seconds = 1.5, loop = 3) {
 
 ### `speak` Utility Function
 
-Quick helper to speak text using Android's `TextToSpeech` with configurable rate, pitch, and locale. `onDone` is invoked when speaking finishes.
+Quick helper to speak text with configurable rate, pitch, and locale. `onDone` is invoked when speaking finishes.
 
 ```kotlin
 speak("Hello, world!") {
@@ -258,8 +258,11 @@ adapter.updateItems(newItems)
 scrollView.onScroll(
     onTop = { /* reached top */ },
     onBottom = { /* reached bottom */ },
-    percentCallback = { percent -> /* Scrolled $percent % */ }
+    other = { /* somewhere else */ }
 )
+{ percent ->
+    // scrolled $percent %
+}
 ```
 
 ---
@@ -292,9 +295,19 @@ tooMuchEmojisText.unEmojify() { textWithNoEmojis ->
 ### Miscellaneous Tools
 ```kotlin
 intent.start()
+uri.open()
+123456.dial()
 file.read()
+"A useful info".writeInternalFile("info.txt")
+readInternalFile("info.txt")
 "abc".append("def")
 listOf(tv1, tv2).setText(listOf("A", "B"))
+captureScreen { bitmap -> ... }
+vibrate(minimal = true)
+view(R.id.text)
+button.redirect("github.com/binarybeam")
+
+and countless more...
 ```
 
 ---
