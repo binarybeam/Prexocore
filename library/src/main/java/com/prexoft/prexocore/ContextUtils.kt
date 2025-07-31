@@ -37,6 +37,8 @@ import kotlin.reflect.KClass
 import kotlin.toString
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
+import java.io.File
+import java.util.Locale
 
 fun Context.havePermission(permission: String): Boolean {
     return havePermission(listOf(permission))
@@ -82,7 +84,7 @@ fun Context.goTo(uri: String) {
         startActivity(Intent(Intent.ACTION_VIEW, uri.toUri()))
     }
     catch (_: Exception) {
-        if (uri.isDigitsOnly()) {
+        if (uri.removePrefix("+").replace(" ", "").replace("-", "").isDigitsOnly()) {
             val newUri = "tel:$uri"
             startActivity(Intent(Intent.ACTION_DIAL, newUri.toUri()))
         }
@@ -377,4 +379,22 @@ fun Context.postNotification(
         return
     }
     NotificationManagerCompat.from(this).notify(notificationId, builder.build())
+}
+
+fun Context.readInternalFile(fileName: String): String {
+    return File(filesDir, fileName).read()
+}
+
+fun Context.speak(
+    text: String,
+    rate: Float = 1.0f,
+    pitch: Float = 1.0f,
+    locale: Locale = Locale.getDefault(),
+    onDone: (() -> Unit)? = null
+) {
+    EasyTts.speak(this, text, rate, pitch, locale, onDone)
+}
+
+fun Context.shutdownSpeaker() {
+    EasyTts.shutdown()
 }
