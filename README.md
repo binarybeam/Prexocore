@@ -35,7 +35,7 @@ dependencyResolutionManagement {
 And include the dependency in your `build.gradle.kts`:
 ```kotlin
 dependencies {
-    implementation("com.github.binarybeam:Prexocore:1.0.0")
+    implementation("com.github.binarybeam:Prexocore:1.1.0")
 }
 ```
 
@@ -200,6 +200,31 @@ scrollView.onScroll(
     onBottom = { /* reached bottom */ },
     percentCallback = { percent -> /* Scrolled $percent % */ }
 )
+```
+
+---
+
+### Stylings
+
+Parse Markdown Styling
+```kotlin
+markdownText.parseMarkdown(inHtmlFormat = false) { spanned ->
+    textView.text = spanned
+}
+```
+
+Parse Html Styling
+```kotlin
+htmlText.parseHtml() { spanned ->
+    textView.text = spanned
+}
+```
+
+Unemojify
+```kotlin
+tooMuchEmojisText.unEmojify() { textWithNoEmojis ->
+    textView.text = textWithNoEmojis
+}
 ```
 
 ---
