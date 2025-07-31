@@ -1,4 +1,4 @@
-# 📦 Prexocore
+# Prexocore
 
 **Prexocore** isn’t just another utility library — it’s a collection of high-performance, developer-first Kotlin tools engineered to ease Android development to the next level. It dramatically reduces boilerplate while offering safe, expressive, and delightful APIs across UI, navigation, feedback, and system utilities.
 
@@ -6,17 +6,17 @@ Imagine handling permissions, dialogs, inputs, clicks, navigation, image loading
 
 ---
 
-## 🚀 Why Prexocore?
+## Why Prexocore?
 
-- ⚡ **Zero Config, Zero XML:** Internally bundled views and layouts. No XML hassle.
-- 💎 **Kotlin-First, Boilerplate-Zero:** Idiomatic Kotlin extensions that feel native.
-- 🧠 **Context-Aware Everywhere:** Whether you're in an `Activity`, `Context`, or `Fragment`, everything works.
-- 🧩 **All-in-One Toolkit:** From UI and system tools to advanced interactions.
-- 🧪 **Innovative Abstractions:** Handles one-time clicks, seamless sharing, chained vibrations, dynamic navigation, and more.
+-  **Zero Config, Zero XML:** Internally bundled views and layouts. No XML hassle.
+-  **Kotlin-First, Boilerplate-Zero:** Idiomatic Kotlin extensions that feel native.
+-  **Context-Aware Everywhere:** Whether you're in an `Activity`, `Context`, or `Fragment`, everything works.
+-  **All-in-One Toolkit:** From UI and system tools to advanced interactions.
+-  **Innovative Abstractions:** Handles one-time clicks, seamless sharing, chained vibrations, dynamic navigation, and more.
 
 ---
 
-## 🛠️ Setup
+## Setup
 
 ### Gradle Dependency
 
@@ -41,27 +41,27 @@ dependencies {
 
 ---
 
-## ✨ Feature Highlights
+## Feature Highlights
 
 All utilities work in any `Context`, `Activity`, or `Fragment`. Prexocore detects the environment internally so you don’t have to worry.
 
 ---
 
-### 🧠 Intelligent Feedback System
+### Intelligent Feedback System
 
-#### 🔊 Smart Toasts & Vibrations
+#### Smart Toasts & Vibrations
 ```kotlin
 toast("Simple Message")        
 safeToast("Debounced Message")  // One toast at a time
 vibrate()                       // Tactile feedback
 ```
 
-#### 🎯 Snackbar with Action
+#### Snackbar with Action
 ```kotlin
 snack("Message", "Retry") { clicked ->  }
 ```
 
-#### 🛎️ Notifications (Android N+)
+#### Notifications
 ```kotlin
 postNotification(
     title = "Hello",
@@ -73,33 +73,32 @@ postNotification(
 
 ---
 
-### 🕹️ UI & Input Enhancements
+### UI & Input Enhancements
 
-#### 🎈 View Utilities
+#### View Utilities
 ```kotlin
-view.show()
+view.show()       // With stunning fade in/out effect
 view.hide()
-view.fadeIn(300)
-view.setHeight(dp = 120)
-view.setWidth(dp = 200)
+view.setHeight(dp = 12)
+view.setWidth(dp = 20)
 ```
 
-#### 🎯 Click Management
+#### Click Management
 ```kotlin
-view.onClick { ... }
-view.onSafeClick(1.5) { ... }     // Avoid multiple clicks frequently
-view.onFirstClick { ... }         // One-time only click
+view.onClick { ... }                        // With enahanced feedback
+view.onSafeClick(seconds = 1.5) { ... }     // Avoid multiple clicks frequently
+view.onFirstClick { ... }                   // One-time only click
 view.onDoubleClick { ... }
 ```
 
-#### 🔁 Redirects & Navigation Bindings
+#### Redirects & Navigation Bindings
 ```kotlin
 button.redirect(MyActivity::class)
 link.redirect("https://prexoft.com")
 mail.redirect("founder@prexoft.com")
 ```
 
-#### ⌨️ Input Focus Management
+#### Input Focus Management
 ```kotlin
 editText.focus()             // Auto handles keyboard visibility
 editText.distract()
@@ -107,7 +106,7 @@ editText.distract()
 
 ---
 
-### 🧭 Navigation System
+### Navigation System
 ```kotlin
 goTo(MyActivity::class)
 goTo("1234567890")
@@ -118,7 +117,7 @@ goTo("github.com/binarybeam")
 
 ---
 
-### 📷 Media Sharing
+### Media Sharing
 ```kotlin
 "Some String".share()
 share(bitmap)
@@ -127,7 +126,7 @@ share(bitmap)
 
 ---
 
-### 🧮 Delay Utilities
+### Delay Utilities
 ```kotlin
 after(seconds = 1.5, loop = 3) {
     // Delayed execution every 1.5 seconds, 3 times
@@ -136,25 +135,44 @@ after(seconds = 1.5, loop = 3) {
 
 ---
 
-### 📢 Dialog & Input Prompts
+### Dialog & Input Prompts
 ```kotlin
 alert("Info", "Message", "OK") { acknowledged -> ... }
-input("Name", "Enter your name") { name -> ... }
+input("Name", "Enter your name", required = true) { name -> ... }
 ```
 
 ---
 
-### 🗓️ Time Format Helpers
+### Permission Handing
+
 ```kotlin
-val now = System.currentTimeMillis()
-now.formatAsTime()
-now.formatAsDate()
-now.formatAsDateAndTime()
+private val permission = Permission(this)
+```
+
+```kotlin
+if (havePermission(Manifest.permission.CAMERA)) { ... }
+else {
+    permission.request(Manifest.permission.CAMERA) { granted ->
+        if (granted) { ... }
+    }
+}
 ```
 
 ---
 
-### 📡 Network Monitoring, Requires `ACCESS_NETWORK_STATE` Permission
+### Time Format Helpers
+```kotlin
+now().formatAsTime()              // 11:31 pm
+now().formatAsDate()              // 31.07.2025
+now().formatAsDateAndTime()       // 11:31 pm, 31 Jul 2025
+```
+
+---
+
+### Network Monitoring
+```xml
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
 ```kotlin
 observeNetworkStatus { isConnected -> ... }
 
@@ -164,7 +182,7 @@ if (isNetworkAvailable()) { ... }
 
 ---
 
-### 📃 RecyclerView Quick Adapter
+### RecyclerView Quick Adapter
 ```kotlin
 val adapter = recyclerView.adapter(R.layout.item_layout, list) { position, view, item ->
     // handle list rows
@@ -175,7 +193,7 @@ adapter.updateItems(newItems)
 
 ---
 
-### 📜 Scroll Detection
+### Scroll Detection
 ```kotlin
 scrollView.onScroll(
     onTop = { /* reached top */ },
@@ -186,7 +204,7 @@ scrollView.onScroll(
 
 ---
 
-### 🧰 Miscellaneous Tools
+### Miscellaneous Tools
 ```kotlin
 intent.start()
 file.read()
@@ -196,7 +214,7 @@ listOf(tv1, tv2).setText(listOf("A", "B"))
 
 ---
 
-## 📄 License
+## License
 
 ```text
 Apache License 2.0
