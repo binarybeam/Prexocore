@@ -117,6 +117,28 @@ goTo("github.com/binarybeam")
 
 ---
 
+### `similar` Function
+
+Compare two objects loosely based on their string representation.
+
+#### Features
+
+* Case-insensitive comparison
+* Optional whitespace ignoring
+* Normalizes diacritics (é ≈ e)
+
+#### Usage
+
+```kotlin
+"John Doe".similar("johndoe")               // true
+"12345".similar(12345)                      // true
+"résumé".similar("resume")                  // true
+null.similar("null")                        // true (default ignoreNull = true)
+null.similar("null", ignoreNull = false)    // false
+```
+
+---
+
 ### Media Sharing
 ```kotlin
 "Some String".share()
