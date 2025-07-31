@@ -210,6 +210,11 @@ fun File.read(): String {
     catch (_: Exception) { "" }
 }
 
+fun String.writeInternalFile(context: Context, fileName: String): String {
+    File(context.filesDir, fileName).writeText(this)
+    return this
+}
+
 fun Int.fromDpToPx(context: Context): Int = context.dpToPx(this)
 fun Int.fromPxToDp(context: Context): Double = context.pxToDp(this)
 

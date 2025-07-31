@@ -385,6 +385,10 @@ fun Context.readInternalFile(fileName: String): String {
     return File(filesDir, fileName).read()
 }
 
+fun Context.writeInternalFile(fileName: String, text: String) {
+    File(filesDir, fileName).writeText(text)
+}
+
 fun Context.speak(
     text: String,
     rate: Float = 1.0f,
