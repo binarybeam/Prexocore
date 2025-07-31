@@ -38,7 +38,7 @@ To use this library, add the following dependency in your `build.gradle`:
 ```kotlin
     dependencies {
         implementation("com.github.binarybeam:Prexocore:1.0.0")
-}
+    }
 ```
 
 Add it in your settings.gradle.kts at the end of repositories:
