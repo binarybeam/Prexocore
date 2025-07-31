@@ -1,8 +1,8 @@
 # 📦 Prexocore
 
-**Prexocore** isn’t just another utility library — it’s a curated collection of high-performance, developer-first Kotlin tools engineered to elevate Android development to the next level. It dramatically reduces boilerplate while offering safe, expressive, and delightful APIs across UI, navigation, feedback, and system utilities.
+**Prexocore** isn’t just another utility library — it’s a collection of high-performance, developer-first Kotlin tools engineered to ease Android development to the next level. It dramatically reduces boilerplate while offering safe, expressive, and delightful APIs across UI, navigation, feedback, and system utilities.
 
-Imagine handling permissions, dialogs, clicks, navigation, image loading, toasts, or notifications — all with one-liners and no XML. **Prexocore** empowers you with elegant APIs that just work, with sane defaults and seamless context awareness.
+Imagine handling permissions, dialogs, inputs, clicks, navigation, image loading, toasts, or notifications - all with one-liners and no XML. **Prexocore** empowers you with elegant APIs that just work, with sane defaults and seamless context awareness.
 
 ---
 
@@ -51,23 +51,23 @@ All utilities work in any `Context`, `Activity`, or `Fragment`. Prexocore detect
 
 #### 🔊 Smart Toasts & Vibrations
 ```kotlin
-toast("Simple Message")        // Auto vibrates
-safeToast("Debounced Message")
+toast("Simple Message")        
+safeToast("Debounced Message")  // One toast at a time
 vibrate()                       // Tactile feedback
 ```
 
 #### 🎯 Snackbar with Action
 ```kotlin
-snack("Message", "Retry") { clicked -> if (clicked) { ... } }
+snack("Message", "Retry") { clicked ->  }
 ```
 
 #### 🛎️ Notifications (Android N+)
 ```kotlin
 postNotification(
     title = "Hello",
-    content = "This is a notification",
-    smallIcon = R.drawable.ic_notify,
-    launchIntent = Intent(this, MainActivity::class.java)
+    content = "This is a notification"
+
+    // More optional customisations available 
 )
 ```
 
@@ -80,15 +80,14 @@ postNotification(
 view.show()
 view.hide()
 view.fadeIn(300)
-view.bounce()
-view.setHeight(120)
-view.setWidth(200)
+view.setHeight(dp = 120)
+view.setWidth(dp = 200)
 ```
 
 #### 🎯 Click Management
 ```kotlin
 view.onClick { ... }
-view.onSafeClick(1.5) { ... }
+view.onSafeClick(1.5) { ... }     // Avoid multiple clicks frequently
 view.onFirstClick { ... }         // One-time only click
 view.onDoubleClick { ... }
 ```
@@ -97,11 +96,12 @@ view.onDoubleClick { ... }
 ```kotlin
 button.redirect(MyActivity::class)
 link.redirect("https://prexoft.com")
+mail.redirect("founder@prexoft.com")
 ```
 
 #### ⌨️ Input Focus Management
 ```kotlin
-editText.focus()
+editText.focus()             // Auto handles keyboard visibility
 editText.distract()
 ```
 
@@ -110,30 +110,26 @@ editText.distract()
 ### 🧭 Navigation System
 ```kotlin
 goTo(MyActivity::class)
-goTo("tel:1234567890")
+goTo("1234567890")
 goTo("mailto:support@prexoft.com")
 goTo(myIntent)
-goTo(1234567890L)
-goTo(uri)
+goTo("github.com/binarybeam")
 ```
 
 ---
 
 ### 📷 Media Sharing
 ```kotlin
-share("Text to share")
-share(bitmap)          // Android Q+
-copy("Copy this text")
+"Some String".share()
+share(bitmap)
+"Infortant Info".copy()
 ```
 
 ---
 
-### 🧮 Dimension & Delay Utilities
+### 🧮 Delay Utilities
 ```kotlin
-val px = dpToPx(16)
-val dp = pxToDp(64)
-
-after(1.5, loop = 3) {
+after(seconds = 1.5, loop = 3) {
     // Delayed execution every 1.5 seconds, 3 times
 }
 ```
@@ -158,9 +154,11 @@ now.formatAsDateAndTime()
 
 ---
 
-### 📡 Network Monitoring *(Requires ACCESS_NETWORK_STATE)*
+### 📡 Network Monitoring, Requires `ACCESS_NETWORK_STATE` Permission
 ```kotlin
 observeNetworkStatus { isConnected -> ... }
+
+// Or get one time status
 if (isNetworkAvailable()) { ... }
 ```
 
@@ -168,11 +166,11 @@ if (isNetworkAvailable()) { ... }
 
 ### 📃 RecyclerView Quick Adapter
 ```kotlin
-recyclerView.adapter(R.layout.item_layout, list) { pos, view, item ->
-    view.view<TextView>(R.id.title).text = item.title
+val adapter = recyclerView.adapter(R.layout.item_layout, list) { position, view, item ->
+    // handle list rows
 }
 
-adapterWrapper.updateItems(newItems)
+adapter.updateItems(newItems)
 ```
 
 ---
@@ -182,7 +180,7 @@ adapterWrapper.updateItems(newItems)
 scrollView.onScroll(
     onTop = { /* reached top */ },
     onBottom = { /* reached bottom */ },
-    percentCallback = { percent -> ... }
+    percentCallback = { percent -> /* Scrolled $percent % */ }
 )
 ```
 
