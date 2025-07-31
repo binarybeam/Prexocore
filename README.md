@@ -36,7 +36,7 @@ All components are internally bundled. No XML configuration or external layout f
 To use this library, add the following dependency in your `build.gradle`:
 
 ```kotlin
-implementation("com.prexoft:prexocore:1.0.2")
+implementation("com.prexoft:prexocore:1.0.0")
 ```
 ---
 
