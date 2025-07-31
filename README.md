@@ -71,6 +71,16 @@ postNotification(
 )
 ```
 
+### Keyboard Handling
+```kotlin
+onKeyboardChange() { isOpen, height->
+    // view.setHeight(dp = height.toDp())
+}
+
+// Or get ont time status
+if (isKeyboardOpen) { ... }
+```
+
 ---
 
 ### UI & Input Enhancements
@@ -127,14 +137,24 @@ Compare two objects loosely based on their string representation.
 * Optional whitespace ignoring
 * Normalizes diacritics (é ≈ e)
 
-#### Usage
-
 ```kotlin
 "John Doe".similar("johndoe")               // true
 "12345".similar(12345)                      // true
 "résumé".similar("resume")                  // true
 null.similar("null")                        // true (default ignoreNull = true)
 null.similar("null", ignoreNull = false)    // false
+```
+
+---
+
+### `normalize` Function
+
+This helper strips diacritics from any `CharSequence` to create a normalized string for comparison.
+```kotlin
+"résumé".normalize()      // "resume"
+"Café".normalize()        // "Cafe"
+"mañana".normalize()      // "manana"
+"Ångström".normalize()    // "Angstrom"
 ```
 
 ---
@@ -157,6 +177,24 @@ after(seconds = 1.5, loop = 3) {
 
 ---
 
+### `speak` Utility Function
+
+Quick helper to speak text using Android's `TextToSpeech` with configurable rate, pitch, and locale. `onDone` is invoked when speaking finishes.
+
+```kotlin
+speak("Hello, world!") {
+    // finished speaking
+}
+```
+```kotlin
+override fun onDestroy() {
+    shutdownSpeaker()
+    super.onDestroy()
+}
+```
+
+---
+
 ### Dialog & Input Prompts
 ```kotlin
 alert("Info", "Message", "OK") { acknowledged -> ... }
@@ -172,9 +210,9 @@ private val permission = Permission(this)
 ```
 
 ```kotlin
-if (havePermission(Manifest.permission.CAMERA)) { ... }
+if (havePermission(permission.CAMERA)) { ... }
 else {
-    permission.request(Manifest.permission.CAMERA) { granted ->
+    permission.request(permission.CAMERA) { granted ->
         if (granted) { ... }
     }
 }
