@@ -9,6 +9,9 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.SpannableStringBuilder
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,8 +28,12 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
 import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.prexoft.prexocore.anon.Prexo
+import com.prexoft.prexocore.helper.AdapterWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,6 +58,61 @@ fun EditText.distract() {
     this.clearFocus()
     val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     imm.hideSoftInputFromWindow(this.windowToken, 0)
+}
+
+fun EditText.onTextChange(
+    needPasteInfo: Boolean = true,
+    callback: (text: String, isPasted: Boolean) -> Unit
+) {
+    var isPasteOperation = false
+
+    if (needPasteInfo) {
+        setEditableFactory(object : Editable.Factory() {
+            override fun newEditable(source: CharSequence): Editable {
+                return object : SpannableStringBuilder(source) {
+                    override fun replace(
+                        start: Int,
+                        end: Int,
+                        tb: CharSequence?,
+                        tbstart: Int,
+                        tbend: Int
+                    ): SpannableStringBuilder {
+                        val insertedLength = tbend - tbstart
+                        val deletedLength = end - start
+
+                        if (insertedLength > 1 && deletedLength == 0) {
+                            isPasteOperation = true
+                        }
+
+                        return super.replace(start, end, tb, tbstart, tbend)
+                    }
+                }
+            }
+        })
+    }
+
+    addTextChangedListener(object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { }
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            if (needPasteInfo && count > 1 && before == 0) isPasteOperation = true
+
+            callback(s?.toString() ?: "", isPasteOperation)
+            isPasteOperation = false
+        }
+
+        override fun afterTextChanged(s: Editable?) { }
+    })
+}
+
+fun TextView.onTextChange(
+    callback: (text: String) -> Unit
+) {
+    addTextChangedListener(object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { }
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { callback(s?.toString() ?: "") }
+        override fun afterTextChanged(s: Editable?) { }
+    })
 }
 
 fun View.setHeight(dp: Double) {
@@ -278,6 +340,43 @@ fun View.fadeIn(duration: Long) {
         .start()
 }
 
+fun <T : View> View?.getViews(type: KClass<T>): List<T> {
+    val result = mutableListOf<T>()
+
+    fun recurse(view: View, add: Boolean = true) {
+        if (add && type.java.isInstance(view)) {
+            @Suppress("UNCHECKED_CAST")
+            result.add(view as T)
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                recurse(view.getChildAt(i))
+            }
+        }
+    }
+
+    if (this == null) return result
+    recurse(this, false)
+    return result
+}
+
+fun View?.getViews(): List<View> {
+    val result = mutableListOf<View>()
+
+    fun recurse(view: View, toAdd: Boolean = true) {
+        if (toAdd) result.add(view)
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                recurse(view.getChildAt(i))
+            }
+        }
+    }
+
+    if (this == null) return result
+    recurse(this, false)
+    return result
+}
+
 fun View.fadeOut(duration: Long) {
     animate()
         .alpha(0f)
@@ -286,11 +385,6 @@ fun View.fadeOut(duration: Long) {
         .withEndAction { isVisible = false }
         .start()
 }
-
-class AdapterWrapper<T>(
-    val adapter: RecyclerView.Adapter<*>,
-    val updateItems: (List<T>) -> Unit
-)
 
 fun <T> RecyclerView.adapter(
     @LayoutRes layout: Int,
@@ -327,6 +421,110 @@ fun <T> RecyclerView.adapter(
 
     this.adapter = adapter
     return AdapterWrapper(adapter, adapter.updateItems)
+}
+
+fun <T> RecyclerView.adapter(
+    items: List<T>,
+    layoutType: Prexo = Prexo.LINEAR_LAYOUT,
+    spanCountForGrid: Int = 2,
+    bind: (position: Int, icon: ImageView, textView: TextView, item: T) -> Unit
+): AdapterWrapper<T> {
+    this.layoutManager = when (layoutType) {
+        Prexo.GRID_LAYOUT -> GridLayoutManager(this.context, spanCountForGrid)
+        else -> LinearLayoutManager(this.context)
+    }
+
+    val listItems = items.toMutableList()
+    val adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        override fun getItemCount(): Int = listItems.size
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(
+                when (layoutType) {
+                    Prexo.GRID_LAYOUT -> R.layout.grid_recycler_item
+                    else -> R.layout.linear_recycler_item
+                }, parent, false)
+            return object : RecyclerView.ViewHolder(view) { }
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            bind(position, holder.itemView.findViewById(R.id.icon), holder.itemView.findViewById(R.id.textView), listItems[position])
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        fun update(newItems: List<T>) {
+            listItems.clear()
+            listItems.addAll(newItems)
+            notifyDataSetChanged()
+        }
+        val updateItems: (List<T>) -> Unit = ::update
+    }
+
+    this.adapter = adapter
+    return AdapterWrapper(adapter, adapter.updateItems)
+}
+
+fun RecyclerView.adapter(
+    @LayoutRes layout: Int,
+    itemCount: Int,
+    layoutManager: RecyclerView.LayoutManager? = null,
+    bind: (position: Int, view: View) -> Unit
+): RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    if (this.layoutManager == null) {
+        this.layoutManager = layoutManager ?: LinearLayoutManager(this.context)
+    }
+
+    val adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        override fun getItemCount(): Int = itemCount
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
+            return object : RecyclerView.ViewHolder(view) {}
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            bind(position, holder.itemView)
+        }
+    }
+
+    this.adapter = adapter
+    return adapter
+}
+
+fun RecyclerView.adapter(
+    itemCount: Int,
+    layoutType: Prexo = Prexo.LINEAR_LAYOUT,
+    spanCountForGrid: Int = 2,
+    bind: (position: Int, icon: ImageView, textView: TextView) -> Unit
+): RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    this.layoutManager = when (layoutType) {
+        Prexo.GRID_LAYOUT -> GridLayoutManager(this.context, spanCountForGrid)
+        else -> LinearLayoutManager(this.context)
+    }
+
+    val adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        override fun getItemCount(): Int = itemCount
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(
+                when (layoutType) {
+                    Prexo.GRID_LAYOUT -> R.layout.grid_recycler_item
+                    else -> R.layout.linear_recycler_item
+                }, parent, false)
+
+            return object : RecyclerView.ViewHolder(view) { }
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            bind(position, holder.itemView.findViewById(R.id.icon), holder.itemView.findViewById(R.id.textView))
+        }
+    }
+
+    this.adapter = adapter
+    return adapter
 }
 
 fun ScrollView.onScroll (

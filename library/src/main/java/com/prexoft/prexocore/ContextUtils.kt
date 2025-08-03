@@ -22,11 +22,15 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.MediaStore
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.view.Window
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -184,6 +188,7 @@ fun Context.toast(message: Any?, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, message.toString(), duration).show()
 }
 
+@RequiresPermission(Manifest.permission.VIBRATE)
 fun Context.vibrate(legacyFallback: Boolean = true, minimal: Boolean = false) {
     val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -315,6 +320,7 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
 }
 
 @RequiresApi(Build.VERSION_CODES.M)
+@RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
 fun Context.isNetworkAvailable(): Boolean {
     val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val network = connectivityManager.activeNetwork ?: return false
@@ -333,11 +339,12 @@ fun Context.isDarkTheme(): Boolean {
 }
 
 @RequiresApi(Build.VERSION_CODES.N)
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 fun Context.postNotification(
     title: String,
     content: String,
+    icon: Int,
     notificationId: Int = 1,
-    smallIcon: Int,
     launchIntent: Intent? = null,
     channelId: String = "channel_1",
     channelName: String = "General Notifications",
@@ -353,7 +360,7 @@ fun Context.postNotification(
     val builder = NotificationCompat.Builder(this, channelId)
         .setContentTitle(title)
         .setContentText(content)
-        .setSmallIcon(smallIcon)
+        .setSmallIcon(icon)
         .setStyle(NotificationCompat.BigTextStyle().bigText(content))
         .setPriority(
             when (importance) {
@@ -390,15 +397,58 @@ fun Context.writeInternalFile(fileName: String, text: String) {
 }
 
 fun Context.speak(
-    text: String,
+    text: CharSequence,
     rate: Float = 1.0f,
     pitch: Float = 1.0f,
     locale: Locale = Locale.getDefault(),
     onDone: (() -> Unit)? = null
 ) {
-    EasyTts.speak(this, text, rate, pitch, locale, onDone)
+    EasyTts.speak(this, text.toString(), rate, pitch, locale, onDone)
 }
 
 fun Context.shutdownSpeaker() {
     EasyTts.shutdown()
+}
+
+@RequiresPermission(Manifest.permission.RECORD_AUDIO)
+fun Context.listenSpeech(keepListening: Boolean = false, onResult: (String) -> Unit) {
+    if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+        onResult("")
+        return
+    }
+
+    val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+    }
+
+    val listener = object : RecognitionListener {
+        override fun onResults(results: Bundle?) {
+            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            val text = matches?.firstOrNull()?:""
+
+            onResult(text)
+            if (keepListening) after(1) { speechRecognizer.startListening(intent) }
+            else speechRecognizer.destroy()
+        }
+
+        override fun onError(error: Int) {
+            onResult("")
+            if (keepListening) after(1) { speechRecognizer.startListening(intent) }
+            else speechRecognizer.destroy()
+        }
+
+        override fun onReadyForSpeech(params: Bundle?) {}
+        override fun onBeginningOfSpeech() {}
+        override fun onRmsChanged(rmsdB: Float) {}
+        override fun onBufferReceived(buffer: ByteArray?) {}
+        override fun onEndOfSpeech() {}
+        override fun onPartialResults(partialResults: Bundle?) {}
+        override fun onEvent(eventType: Int, params: Bundle?) {}
+    }
+
+    speechRecognizer.setRecognitionListener(listener)
+    speechRecognizer.startListening(intent)
 }
