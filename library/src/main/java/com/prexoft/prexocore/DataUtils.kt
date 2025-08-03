@@ -10,28 +10,43 @@ import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import android.util.Log
+import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.core.text.toSpanned
 import java.io.File
 import java.io.IOException
+import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.collections.forEach
+import kotlin.text.filterNot
 
 fun Int.dial(context: Context) {
     context.goTo(this)
 }
 
-fun String.preview(context: Context) {
-    context.goTo(this)
+fun CharSequence.preview(context: Context) {
+    context.goTo(this.toString())
 }
 
-fun String.parseHtml(): Spanned {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        Html.fromHtml(this, Html.FROM_HTML_MODE_LEGACY)
+fun CharSequence.speak(context: Context) {
+    context.speak(this)
+}
+
+fun Int.loop(safeMode: Boolean = true, action: (Int) -> Unit) {
+    val cappedRepeat = if (safeMode && this > 1000) 1000 else this
+    repeat(cappedRepeat.coerceAtLeast(0)) { i ->
+        action(i)
     }
-    else Html.fromHtml(this)
+}
+
+fun CharSequence.parseHtml(): Spanned {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        Html.fromHtml(this.toString(), Html.FROM_HTML_MODE_LEGACY)
+    }
+    else Html.fromHtml(this.toString())
 }
 
 fun CharSequence.unEmojify(): String {
@@ -45,7 +60,7 @@ fun CharSequence.unEmojify(): String {
     return emojiRegex.replace(this, "")
 }
 
-fun String.parseMarkdown(inHtmlFormat: Boolean = false): Spanned {
+fun CharSequence.parseMarkdown(inHtmlFormat: Boolean = false): Spanned {
     val lines = this.lines()
     val html = StringBuilder()
     var inList = false
@@ -195,8 +210,8 @@ fun Intent.start(context: Context) {
     context.goTo(this)
 }
 
-fun String.share(context: Context, subject: String = "") {
-    context.share(this, subject)
+fun CharSequence.share(context: Context, subject: String = "") {
+    context.share(this.toString(), subject)
 }
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -204,8 +219,8 @@ fun Bitmap.share(context: Context, subject: String = "") {
     context.share(this, subject)
 }
 
-fun String.copy(context: Context) {
-    context.copy(this)
+fun CharSequence.copy(context: Context) {
+    context.copy(this.toString())
 }
 
 fun File.read(): String {
@@ -213,17 +228,30 @@ fun File.read(): String {
     catch (_: Exception) { "" }
 }
 
-fun String.writeInternalFile(context: Context, fileName: String): String {
-    File(context.filesDir, fileName).writeText(this)
-    return this
+fun CharSequence.writeInternalFile(context: Context, fileName: String): String {
+    File(context.filesDir, fileName).writeText(this.toString())
+    return this.toString()
 }
 
-fun Any?.similar(other: Any?): Boolean {
-    return this.toString().lowercase() == other.toString().lowercase()
+fun Any?.similar(other: Any?, ignoreWhitespaces: Boolean = true, ignoreNull: Boolean = true): Boolean {
+    if (this == null && other == null) return true
+    if (this == null || other == null) {
+        if (!ignoreNull) return false
+    }
+
+    val normalizedThis = this.toString().normalize()
+    val normalizedOther = other.toString().normalize()
+
+    return if (ignoreWhitespaces) normalizedThis.filterNot { it.isWhitespace() }.equals(normalizedOther.filterNot { it.isWhitespace() }, true)
+    else normalizedThis.equals(normalizedOther, true)
 }
 
-fun Int.fromDpToPx(context: Context): Int = context.dpToPx(this)
-fun Int.fromPxToDp(context: Context): Double = context.pxToDp(this)
+fun CharSequence.normalize(): String {
+    return Normalizer.normalize(this, Normalizer.Form.NFD).replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+}
+
+fun Int.toPx(context: Context): Int = context.dpToPx(this)
+fun Int.toDp(context: Context): Double = context.pxToDp(this)
 
 fun Any?.log(tag: String = "DEBUG") {
     Log.d(tag, this.toString())
@@ -241,8 +269,8 @@ fun Long.formatAsDateAndTime(pattern: String = "hh:mm a, dd MMM yyyy", locale: L
     return formatAsTime(pattern, locale)
 }
 
-fun String.append(value: String): String {
-    return this + value
+fun CharSequence.append(value: String): String {
+    return this.toString() + value
 }
 
 fun parseInlineMarkdown(text: String): String {
@@ -296,4 +324,10 @@ fun List<Pair<Bitmap, String>>.optimisedMultiPhotos(): Bitmap {
         scaledBitmap.recycle()
     }
     return data
+}
+
+fun List<View>.onClick(effect: Boolean = true, feedback: Boolean = true, listener: (View) -> Unit) {
+    this.forEach {
+        it.onClick(effect, feedback, listener)
+    }
 }
