@@ -8,11 +8,11 @@ Imagine handling permissions, dialogs, inputs, clicks, navigation, image loading
 
 ## Why Prexocore?
 
--  **Zero Config, Zero XML:** Internally bundled views and layouts. No XML hassle.
--  **Kotlin-First, Boilerplate-Zero:** Idiomatic Kotlin extensions that feel native.
--  **Context-Aware Everywhere:** Whether you're in an `Activity`, `Context`, or `Fragment`, everything works.
--  **All-in-One Toolkit:** From UI and system tools to advanced interactions.
--  **Innovative Abstractions:** Handles one-time clicks, seamless sharing, chained vibrations, dynamic navigation, and more.
+* **Zero Config, Zero XML:** Internally bundled views and layouts. No XML hassle.
+* **Kotlin-First, Boilerplate-Zero:** Idiomatic Kotlin extensions that feel native.
+* **Context-Aware Everywhere:** Whether you're in an `Activity`, `Context`, or `Fragment`, everything works.
+* **All-in-One Toolkit:** From UI and system tools to advanced interactions.
+* **Innovative Abstractions:** Handles one-time clicks, seamless sharing, chained vibrations, dynamic navigation, and more.
 
 ---
 
@@ -21,6 +21,7 @@ Imagine handling permissions, dialogs, inputs, clicks, navigation, image loading
 ### Gradle Dependency
 
 Add JitPack to your `settings.gradle.kts`:
+
 ```kotlin
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -33,6 +34,7 @@ dependencyResolutionManagement {
 ```
 
 And include the dependency in your `build.gradle.kts`:
+
 ```kotlin
 dependencies {
     implementation("com.github.binarybeam:Prexocore:1.1.0")
@@ -48,16 +50,18 @@ All utilities work in any `Context`, `Activity`, or `Fragment`. Prexocore detect
 ---
 
 #### Notifications
+
 ```kotlin
 postNotification(
     title = "Hello",
     content = "This is a notification"
 
-    // More optional customisations available 
+    // More optional customisations available
 )
 ```
 
 ### Keyboard Handling
+
 ```kotlin
 onKeyboardChange() { isOpen, height->
     // view.setHeight(dp = height.toDp())
@@ -72,6 +76,7 @@ if (isKeyboardOpen) { ... }
 ### UI & Input Enhancements
 
 #### View Utilities
+
 ```kotlin
 view.show()       // With stunning fade in/out effect
 view.hide()
@@ -80,6 +85,7 @@ view.setWidth(dp = 20)
 ```
 
 #### Click Management
+
 ```kotlin
 view.onClick { ... }                        // With enahanced feedback
 view.onSafeClick(seconds = 1.5) { ... }     // Avoid multiple clicks frequently
@@ -88,6 +94,7 @@ view.onDoubleClick { ... }
 ```
 
 #### Smart Messages
+
 ```kotlin
 toast("Simple Message")        
 safeToast("Debounced Message")  // One toast at a time
@@ -95,6 +102,7 @@ snack("Message", "Retry") { clicked ->  }
 ```
 
 #### Redirects & Navigation Bindings
+
 ```kotlin
 button.redirect(MyActivity::class)
 link.redirect("https://prexoft.com")
@@ -102,6 +110,7 @@ mail.redirect("founder@prexoft.com")
 ```
 
 #### Input Focus Management
+
 ```kotlin
 editText.focus()             // Auto handles keyboard visibility
 editText.distract()
@@ -110,6 +119,7 @@ editText.distract()
 ---
 
 ### Navigation System
+
 ```kotlin
 goTo(MyActivity::class)
 goTo("1234567890")
@@ -143,6 +153,7 @@ null.similar("null", ignoreNull = false)    // false
 ### `normalize` Function
 
 This helper strips diacritics from any `CharSequence` to create a normalized string for comparison.
+
 ```kotlin
 "résumé".normalize()      // "resume"
 "Café".normalize()        // "Cafe"
@@ -153,6 +164,7 @@ This helper strips diacritics from any `CharSequence` to create a normalized str
 ---
 
 ### Media Sharing
+
 ```kotlin
 "Some String".share()
 share(bitmap)
@@ -162,9 +174,18 @@ share(bitmap)
 ---
 
 ### Delay Utilities
+
 ```kotlin
 after(seconds = 1.5, loop = 3) {
     // Delayed execution every 1.5 seconds, 3 times
+}
+
+5.loop { i ->
+    // Loop 5 times safely
+}
+
+loop(10) { i ->
+    // Loop with optional safety for large numbers
 }
 ```
 
@@ -179,6 +200,7 @@ speak("Hello, world!") {
     // finished speaking
 }
 ```
+
 ```kotlin
 override fun onDestroy() {
     shutdownSpeaker()
@@ -189,6 +211,7 @@ override fun onDestroy() {
 ---
 
 ### Dialog & Input Prompts
+
 ```kotlin
 alert("Info", "Message", "OK") { acknowledged -> ... }
 input("Name", "Enter your name", required = true) { name -> ... }
@@ -214,6 +237,7 @@ else {
 ---
 
 ### Time Format Helpers
+
 ```kotlin
 now().formatAsTime()              // 11:31 pm
 now().formatAsDate()              // 31.07.2025
@@ -223,9 +247,11 @@ now().formatAsDateAndTime()       // 11:31 pm, 31 Jul 2025
 ---
 
 ### Network Monitoring
+
 ```xml
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
+
 ```kotlin
 observeNetworkStatus { isConnected -> ... }
 
@@ -236,6 +262,7 @@ if (isNetworkAvailable()) { ... }
 ---
 
 ### RecyclerView Quick Adapter
+
 ```kotlin
 val adapter = recyclerView.adapter(R.layout.item_layout, list) { position, view, item ->
     // handle list rows
@@ -246,7 +273,26 @@ adapter.updateItems(newItems)
 
 ---
 
+### Advanced RecyclerView Bindings
+
+```kotlin
+recyclerView.adapter(itemCount = 5) { pos, icon, label ->
+    // Bind icons and labels for list
+}
+
+recyclerView.adapter(layout = R.layout.item_layout, itemCount = 10) { pos, view ->
+    // Bind view by layout
+}
+
+recyclerView.adapter(listOfData, layoutType = Prexo.GRID_LAYOUT) { pos, icon, label, item ->
+    // Grid or linear layouts
+}
+```
+
+---
+
 ### Scroll Detection
+
 ```kotlin
 scrollView.onScroll(
     onTop = { /* reached top */ },
@@ -263,6 +309,7 @@ scrollView.onScroll(
 ### Stylings
 
 Parse Markdown Styling
+
 ```kotlin
 markdownText.parseMarkdown(inHtmlFormat = false) { spanned ->
     textView.text = spanned
@@ -270,6 +317,7 @@ markdownText.parseMarkdown(inHtmlFormat = false) { spanned ->
 ```
 
 Parse Html Styling
+
 ```kotlin
 htmlText.parseHtml() { spanned ->
     textView.text = spanned
@@ -277,6 +325,7 @@ htmlText.parseHtml() { spanned ->
 ```
 
 Unemojify
+
 ```kotlin
 tooMuchEmojisText.unEmojify() { textWithNoEmojis ->
     textView.text = textWithNoEmojis
@@ -286,6 +335,7 @@ tooMuchEmojisText.unEmojify() { textWithNoEmojis ->
 ---
 
 ### Miscellaneous Tools
+
 ```kotlin
 intent.start()
 uri.open()
@@ -299,8 +349,25 @@ captureScreen { bitmap -> ... }
 vibrate(minimal = true)
 view(R.id.text)
 button.redirect("github.com/binarybeam")
+```
 
-and countless more...
+---
+
+### View Tree Utilities
+
+```kotlin
+val allViews = rootView.getViews()
+val allButtons = rootView.getViews(Button::class)
+```
+
+---
+
+### Speech Recognition
+
+```kotlin
+listenSpeech(keepListening = true) { result ->
+    // handle voice input
+}
 ```
 
 ---
