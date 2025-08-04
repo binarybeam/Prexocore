@@ -8,9 +8,13 @@
 ## ⚡ What Makes Prexocore Different?
 
 🧠 **Context-aware** – Works inside any `Context`, `Activity`, or `Fragment`, seamlessly.
+
 💥 **No XML** – All common views & layouts bundled internally.
+
 🔐 **Safe by default** – Click debounce, single-toast, no memory leaks.
+
 🛠️ **Swiss Army Knife** – One toolkit to rule them all.
+
 🧬 **Minimal & expressive** – Feels native in Kotlin.
 
 ---
