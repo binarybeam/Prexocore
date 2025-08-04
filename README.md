@@ -90,8 +90,6 @@ dependencies {
 
 ## 🧰 Full Feature List
 
----
-
 #### Notifications
 
 ```kotlin
