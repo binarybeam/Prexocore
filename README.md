@@ -1,20 +1,61 @@
 # Prexocore
 
-**Prexocore** isn’t just another utility library — it’s a collection of high-performance, developer-first Kotlin tools engineered to ease Android development to the next level. It dramatically reduces boilerplate while offering safe, expressive, and delightful APIs across UI, navigation, feedback, and system utilities.
+> **Android devs: tired of bloated XML, click hell, and boilerplate?**
+> **Prexocore** is your Kotlin-first escape hatch — handle toasts, permissions, inputs, dialogs, navigation, and more, with expressive one-liners and zero friction.
 
-Imagine handling permissions, dialogs, inputs, clicks, navigation, image loading, toasts, or notifications - all with one-liners and no XML. **Prexocore** empowers you with elegant APIs that just work, with sane defaults and seamless context awareness.
+---
+
+## ⚡ What Makes Prexocore Different?
+
+🧠 **Context-aware** – Works inside any `Context`, `Activity`, or `Fragment`, seamlessly.
+💥 **No XML** – All common views & layouts bundled internally.
+🔐 **Safe by default** – Click debounce, single-toast, no memory leaks.
+🛠️ **Swiss Army Knife** – One toolkit to rule them all.
+🧬 **Minimal & expressive** – Feels native in Kotlin.
 
 ---
 
-## Why Prexocore?
+## 🚀 Real Problems. Real Fixes.
 
-* **Zero Config, Zero XML:** Internally bundled views and layouts. No XML hassle.
-* **Kotlin-First, Boilerplate-Zero:** Idiomatic Kotlin extensions that feel native.
-* **Context-Aware Everywhere:** Whether you're in an `Activity`, `Context`, or `Fragment`, everything works.
-* **All-in-One Toolkit:** From UI and system tools to advanced interactions.
-* **Innovative Abstractions:** Handles one-time clicks, seamless sharing, chained vibrations, dynamic navigation, and more.
+| Pain                       | Prexocore Fix                            |
+| -------------------------- | ---------------------------------------- |
+| 10+ lines to show a dialog | `alert("Title", "Message", "OK") {}`     |
+| Repeated toast spamming    | `safeToast("One toast at a time")`       |
+| Double clicks on buttons   | `view.onSafeClick {}`                    |
+| Keyboard height handling   | `onKeyboardChange { isOpen, height -> }` |
+| Manual permissions code    | `permission.request(...) { granted -> }` |
+| Tedious RecyclerView setup | `recyclerView.adapter(...) {}`           |
 
 ---
+
+## 📸 Quick Demo
+
+> Want to see it in action? Check out [this here →](https://prexocore.prexoft.com)
+
+---
+
+## 🧪 Before vs After (Dialog Example)
+
+**🔴 Without Prexocore**
+
+```kotlin
+AlertDialog.Builder(this)
+    .setTitle("Title")
+    .setMessage("Message")
+    .setPositiveButton("OK") { dialog, _ ->
+        dialog.dismiss()
+    }
+    .show()
+```
+
+**🟢 With Prexocore**
+
+```kotlin
+alert("Title", "Message", "OK") { acknowledged -> ... }
+```
+
+---
+
 
 ## Setup
 
@@ -43,9 +84,7 @@ dependencies {
 
 ---
 
-## Feature Highlights
-
-All utilities work in any `Context`, `Activity`, or `Fragment`. Prexocore detects the environment internally so you don’t have to worry.
+## 🧰 Full Feature List
 
 ---
 
