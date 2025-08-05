@@ -306,11 +306,6 @@ val adapter = recyclerView.adapter(R.layout.item_layout, list) { position, view,
 }
 
 adapter.updateItems(newItems)
-
-// Or even easier
-recyclerView.adapter(rows = 5, layout = Prexo.LINEAR_LAYOUT) { position, icon, textView ->
-    // handle built-in icon and textView
-}
 ```
 
 ---
