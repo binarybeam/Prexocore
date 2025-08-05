@@ -38,28 +38,6 @@
 
 ---
 
-## 🧪 Before vs After (Dialog Example)
-
-**🔴 Without Prexocore**
-
-```kotlin
-AlertDialog.Builder(this)
-    .setTitle("Title")
-    .setMessage("Message")
-    .setPositiveButton("OK") { dialog, _ ->
-        dialog.dismiss()
-    }
-    .show()
-```
-
-**🟢 With Prexocore**
-
-```kotlin
-alert("Title", "Message", "OK") { acknowledged -> ... }
-```
-
----
-
 
 ## Setup
 
@@ -82,7 +60,7 @@ And include the dependency in your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.binarybeam:Prexocore:1.2.0")
+    implementation("com.github.binarybeam:Prexocore:1.3.0")
 }
 ```
 
