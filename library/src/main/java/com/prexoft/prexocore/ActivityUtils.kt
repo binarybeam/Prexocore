@@ -28,7 +28,7 @@ fun Activity.isKeyboardOpen(): Boolean {
 }
 
 fun Activity.onKeyboardChange(callback: (isOpen: Boolean, keyboardHeight: Int) -> Unit) {
-    ViewCompat.setOnApplyWindowInsetsListener(window.decorView.rootView) { _, insets ->
+    ViewCompat.setOnApplyWindowInsetsListener(view(android.R.id.content)) { _, insets ->
         val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
         callback(imeInsets > 0, imeInsets)
         insets

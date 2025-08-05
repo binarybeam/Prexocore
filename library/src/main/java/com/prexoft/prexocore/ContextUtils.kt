@@ -6,25 +6,39 @@ import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.database.Cursor
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.icu.util.Calendar
+import android.media.MediaPlayer
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.CalendarContract
+import android.provider.CallLog
+import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.provider.Settings
+import android.provider.Telephony
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.telephony.SmsManager
+import android.telephony.SubscriptionManager
+import android.text.InputType
 import android.view.Window
 import android.widget.EditText
 import android.widget.TextView
@@ -41,6 +55,11 @@ import kotlin.reflect.KClass
 import kotlin.toString
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
+import com.prexoft.prexocore.anon.CalendarEvent
+import com.prexoft.prexocore.anon.Contact
+import com.prexoft.prexocore.anon.Media
+import com.prexoft.prexocore.anon.SimSlot
+import com.prexoft.prexocore.anon.Sms
 import java.io.File
 import java.util.Locale
 
@@ -267,7 +286,7 @@ fun Context.after(seconds: Int, loop: Int = 1, feedback: Boolean = false, action
     after(seconds.toDouble(), loop, feedback, action)
 }
 
-fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, onResult: (String) -> Unit) {
+fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, inputType: Int = InputType.TYPE_CLASS_TEXT, onResult: (String) -> Unit) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -282,6 +301,8 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
     val inputView = dialog.findViewById<EditText>(R.id.editTextText)
 
     dialog.setCancelable(!required)
+    try { inputView.inputType = inputType }
+    catch (_: Exception) { }
 
     if (isDarkTheme()) {
         main.setCardBackgroundColor("#212121".toColorInt())
@@ -451,4 +472,300 @@ fun Context.listenSpeech(keepListening: Boolean = false, onResult: (String) -> U
 
     speechRecognizer.setRecognitionListener(listener)
     speechRecognizer.startListening(intent)
+}
+
+fun Context.playSound(source: Any): MediaPlayer? {
+    return try {
+        val mediaPlayer = MediaPlayer()
+        when (source) {
+            is Int -> {
+                val uri = "android.resource://$packageName/$source".toUri()
+                mediaPlayer.setDataSource(this, uri)
+            }
+            is String -> {
+                if (source.startsWith("http://") || source.startsWith("https://")) mediaPlayer.setDataSource(source)
+                else mediaPlayer.setDataSource(source)
+            }
+            is File -> mediaPlayer.setDataSource(source.absolutePath)
+            is Uri -> mediaPlayer.setDataSource(this, source)
+            else -> null
+        }
+
+        mediaPlayer.setOnPreparedListener { it.start() }
+        mediaPlayer.prepareAsync()
+        mediaPlayer
+    }
+    catch (_: Exception) {
+        null
+    }
+}
+
+@RequiresPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+fun Context.getPhotosForOlderDevice(maxCount: Int = Int.MAX_VALUE): List<Media> {
+    return postPermissionHandledPhotos(maxCount, 110011)
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+fun Context.getPhotos(maxCount: Int = Int.MAX_VALUE): List<Media> {
+    if (!Environment.isExternalStorageManager()) {
+        goTo(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+        return emptyList()
+    }
+    return postPermissionHandledPhotos(maxCount, 110011)
+}
+
+fun Context.postPermissionHandledPhotos(maxCount: Int, accessCode: Int): List<Media> {
+    if (accessCode != 110011) return emptyList()
+    val images = mutableListOf<Media>()
+    val contentResolver = applicationContext.contentResolver
+    val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+    val projection = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.DATE_TAKEN,
+        MediaStore.Images.Media.DISPLAY_NAME
+    )
+    val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+    val cursor = contentResolver.query(uri, projection, null, null, sortOrder)
+
+    cursor?.use {
+        var count = 0
+        while (it.moveToNext() && count < maxCount) {
+            val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+            val dateTaken = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN))
+            val imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
+
+            try {
+                val inputStream = contentResolver.openInputStream(imageUri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
+
+                if (bitmap != null) {
+                    images.add(Media(bitmap, dateTaken))
+                    count++
+                }
+            }
+            catch (e: Exception) {
+                e.message.log()
+            }
+        }
+    }
+    return images
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+@RequiresPermission(allOf = [Manifest.permission.SEND_SMS, Manifest.permission.READ_PHONE_STATE])
+fun Context.sendSms(phone: String, message: String, sim: SimSlot = SimSlot.DEFAULT): Boolean {
+    val smsManager = getSmsManagerForSim(sim) ?: return false
+    return try {
+        smsManager.sendTextMessage(phone, null, message, null, null)
+        true
+    }
+    catch (_: Exception) {
+        false
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+@RequiresPermission(Manifest.permission.READ_PHONE_STATE)
+fun Context.getSmsManagerForSim(sim: SimSlot): SmsManager? {
+    return try {
+        when (sim) {
+            SimSlot.SIM_1, SimSlot.SIM_2 -> {
+                val subId = getSimSubscriptionId(sim.ordinal) ?: return null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    getSystemService(SmsManager::class.java)?.createForSubscriptionId(subId)
+                }
+                else {
+                    @Suppress("DEPRECATION")
+                    SmsManager.getSmsManagerForSubscriptionId(subId)
+                }
+            }
+            else -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    getSystemService(SmsManager::class.java)
+                }
+                else {
+                    @Suppress("DEPRECATION")
+                    SmsManager.getDefault()
+                }
+            }
+        }
+    }
+    catch (_: Exception) {
+        null
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+@RequiresPermission(Manifest.permission.READ_PHONE_STATE)
+fun Context.getSimSubscriptionId(slotIndex: Int): Int? {
+    val subscriptionManager = getSystemService(SubscriptionManager::class.java)
+    return subscriptionManager.activeSubscriptionInfoList
+        ?.firstOrNull { it.simSlotIndex == slotIndex }
+        ?.subscriptionId
+}
+
+@RequiresPermission(Manifest.permission.READ_SMS)
+fun Context.getSms(maxCount: Int = Int.MAX_VALUE): List<Sms> {
+    val uri = Telephony.Sms.Inbox.CONTENT_URI
+    val projection = arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE)
+    val sortOrder = "${Telephony.Sms.DATE} DESC"
+    val cursor = contentResolver.query(uri, projection, null, null, sortOrder)
+    val messages = mutableListOf<Sms>()
+
+    cursor?.use {
+        var count = 0
+        while (it.moveToNext() && count < maxCount) {
+            val id = it.getString(it.getColumnIndexOrThrow(Telephony.Sms._ID))
+            val address = it.getString(it.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
+            val body = it.getString(it.getColumnIndexOrThrow(Telephony.Sms.BODY))
+            val timeInMillis = it.getLong(it.getColumnIndexOrThrow(Telephony.Sms.DATE))
+
+            messages.add(Sms(
+                id = id,
+                sender = address,
+                body = body,
+                time = timeInMillis
+            ))
+            count++
+        }
+    }
+    return messages
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+fun Context.fileStructure(directory: File = Environment.getExternalStorageDirectory(), onResult: (String) -> Unit) {
+    structure = ""
+    if (!Environment.isExternalStorageManager()) {
+        goTo(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+        onResult("")
+    }
+    else {
+        listFileStructure(directory)
+        after(1) { onResult(structure) }
+    }
+}
+
+@RequiresPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+fun Context.fileStructureForOlderDevice(directory: File = Environment.getExternalStorageDirectory(), onResult: (String) -> Unit) {
+    structure = ""
+    listFileStructure(directory)
+    after(1) { onResult(structure) }
+}
+
+private var structure = ""
+fun listFileStructure(directory: File, indent: String = "") {
+    val files = directory.listFiles()
+
+    files?.sortedWith(compareBy({ !it.isDirectory }, { it.name }))?.forEach { file ->
+        structure += "$indent${file.name}\n"
+        if (file.isDirectory) listFileStructure(file, "$indent    ")
+    }
+}
+
+fun Context.getCallLogs(maxCount: Int = Int.MAX_VALUE): List<com.prexoft.prexocore.anon.CallLog> {
+    val uri = CallLog.Calls.CONTENT_URI
+    val projection = arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.TYPE, CallLog.Calls.DATE)
+    val cursor = contentResolver.query(uri, projection, null, null, null)
+    val calls = mutableListOf<com.prexoft.prexocore.anon.CallLog>()
+
+    cursor?.use {
+        var count = 0
+        while (it.moveToNext() && count < maxCount) {
+            val id = it.getString(it.getColumnIndexOrThrow(CallLog.Calls._ID))
+            val number = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.NUMBER))
+            val type = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.TYPE))
+            val time = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DATE))
+
+            calls.add(com.prexoft.prexocore.anon.CallLog(
+                id = id,
+                number = number,
+                type = type,
+                time = time
+            ))
+            count++
+        }
+    }
+    return calls
+}
+
+fun Context.getContacts(): List<Contact> {
+    val contactsMap = mutableListOf<Contact>()
+    val contactCursor: Cursor? = contentResolver.query(
+        ContactsContract.Contacts.CONTENT_URI,
+        arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
+        null, null, null
+    )
+
+    contactCursor?.use {
+        val idCol = it.getColumnIndex(ContactsContract.Contacts._ID)
+        val nameCol = it.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+
+        while (it.moveToNext()) {
+            val contactId = it.getString(idCol)
+            val contactName = it.getString(nameCol)
+
+            val phoneCursor: Cursor? = contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                arrayOf(contactId),
+                null
+            )
+
+            phoneCursor?.use { pCursor ->
+                val numberCol = pCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                while (pCursor.moveToNext()) {
+                    pCursor.getString(numberCol)?.let { phoneNumber ->
+                        contactsMap.add(Contact(
+                            id = contactId,
+                            name = contactName,
+                            phone = phoneNumber
+                        ))
+                    }
+                }
+            }
+        }
+    }
+    return contactsMap
+}
+
+@RequiresApi(Build.VERSION_CODES.N)
+fun Context.getCalenderEvents(numberOfDays: Int = 365): List<CalendarEvent> {
+    val contentResolver: ContentResolver = applicationContext.contentResolver
+    val uri = CalendarContract.Events.CONTENT_URI
+    val projection = arrayOf(CalendarContract.Events._ID, CalendarContract.Events.TITLE, CalendarContract.Events.DESCRIPTION, CalendarContract.Events.DTSTART, CalendarContract.Events.DTEND, CalendarContract.Events.EVENT_LOCATION)
+
+    val calendar = Calendar.getInstance()
+    val startTimeMillis = calendar.timeInMillis
+
+    calendar.add(Calendar.DAY_OF_YEAR, numberOfDays)
+
+    val endTimeMillis = calendar.timeInMillis
+    val selection = "${CalendarContract.Events.DTSTART} >= ? AND ${CalendarContract.Events.DTEND} <= ?"
+    val selectionArgs = arrayOf(startTimeMillis.toString(), endTimeMillis.toString())
+    val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+    val events = mutableListOf<CalendarEvent>()
+
+    cursor?.use {
+        while (it.moveToNext()) {
+            val id = it.getString(it.getColumnIndexOrThrow(CalendarContract.Events._ID))
+            val title = it.getString(it.getColumnIndexOrThrow(CalendarContract.Events.TITLE))
+            val description = it.getString(it.getColumnIndexOrThrow(CalendarContract.Events.DESCRIPTION))
+            val startDate = it.getLong(it.getColumnIndexOrThrow(CalendarContract.Events.DTSTART))
+            val endDate = it.getLong(it.getColumnIndexOrThrow(CalendarContract.Events.DTEND))
+            val location = it.getString(it.getColumnIndexOrThrow(CalendarContract.Events.EVENT_LOCATION))
+
+            events.add(CalendarEvent(
+                id = id,
+                title = title,
+                description = description,
+                location = location,
+                startTime = startDate,
+                endTime = endDate
+            ))
+        }
+    }
+    return events
 }

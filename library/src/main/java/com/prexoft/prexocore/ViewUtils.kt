@@ -38,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -605,36 +606,52 @@ fun HorizontalScrollView.onScroll (
     }
 }
 
-fun ImageView.loadFromUrl(url: String?, @DrawableRes placeholder: Int? = null) {
-    placeholder?.let { setImageResource(it) }
-    if (url.isNullOrBlank()) return
-
-    CoroutineScope(Dispatchers.Main).launch {
-        val bitmap = withContext(Dispatchers.IO) {
-            try {
-                val connection = URL(url).openConnection() as HttpURLConnection
-                connection.apply {
-                    doInput = true
-                    connectTimeout = 5000
-                    readTimeout = 5000
-                    connect()
-                }
-                val input: InputStream = connection.inputStream
-                BitmapFactory.decodeStream(input)
-            }
-            catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
-        bitmap?.let {
-            this@loadFromUrl.setImageBitmap(it)
-        }
-    }
-}
-
 fun List<TextView>.setText(list: List<String>) {
     this.forEach {
         it.text = list.getOrNull(this.indexOf(it)) ?: ""
+    }
+}
+
+fun ImageView.loadImage(source: Any?, @DrawableRes placeholder: Int? = null) {
+    if (source == null) return
+    val imageView = this
+    if (placeholder != null) this.setImageResource(placeholder)
+
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val bitmap = when (source) {
+                is Int -> {
+                    BitmapFactory.decodeResource(context.resources, source)
+                }
+                is String -> {
+                    if (source.startsWith("http")) {
+                        val url = URL(source)
+                        val conn = url.openConnection() as HttpURLConnection
+                        conn.doInput = true
+                        conn.connect()
+                        val inputStream = conn.inputStream
+                        BitmapFactory.decodeStream(inputStream)
+                    } else {
+                        BitmapFactory.decodeFile(source)
+                    }
+                }
+                is File -> {
+                    BitmapFactory.decodeFile(source.absolutePath)
+                }
+                is Uri -> {
+                    val inputStream = context.contentResolver.openInputStream(source)
+                    BitmapFactory.decodeStream(inputStream)
+                }
+                else -> null
+            }
+
+            bitmap?.let {
+                withContext(Dispatchers.Main) {
+                    imageView.setImageBitmap(it)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
