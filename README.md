@@ -390,6 +390,12 @@ captureScreen { bitmap -> ... }
 vibrate(minimal = true)
 view(R.id.text)
 button.redirect("github.com/binarybeam")
+playSound(source)                            // source could be URL, file_path, project resource etc.
+getPhotos(maxCount = 100)
+getContacts()
+getCallLogs()
+getSms()
+getCalenderEvents(numberOfDays = 365)
 ```
 
 ---
