@@ -221,11 +221,11 @@ after(seconds = 1.5, loop = 3) {
     // Delayed execution every 1.5 seconds, 3 times
 }
 
-5.loop { i ->
+5.loop(safeMode = true) { i ->
     // Loop 5 times safely
 }
 
-loop(10) { i ->
+loop(repeat = 10, safeMode = true) { i ->
     // Loop with optional safety for large numbers
 }
 ```
@@ -268,11 +268,7 @@ private val permission = Permission(this)
 
 ```kotlin
 if (havePermission(permission.CAMERA)) { ... }
-else {
-    permission.request(permission.CAMERA) { granted ->
-        if (granted) { ... }
-    }
-}
+permission.request(permission.CAMERA) { granted -> ... }
 ```
 
 ---
@@ -310,6 +306,11 @@ val adapter = recyclerView.adapter(R.layout.item_layout, list) { position, view,
 }
 
 adapter.updateItems(newItems)
+
+// Or even easier
+recyclerView.adapter(rows = 5, layout = Prexo.LINEAR_LAYOUT) { position, icon, textView ->
+    // handle built-in icon and textView
+}
 ```
 
 ---
@@ -375,6 +376,39 @@ tooMuchEmojisText.unEmojify() { textWithNoEmojis ->
 
 ---
 
+### View Tree Utilities
+
+```kotlin
+val allViews = rootView.getViews()
+val allButtons = rootView.getViews(Button::class)
+```
+
+---
+
+### Speech Recognition
+
+```kotlin
+listenSpeech(keepListening = true) { result ->
+    // handle voice input
+}
+```
+
+---
+
+### Image Loading
+
+```kotlin
+imageView.load(File(...), placeHolder = R.drawable.avatar) { succeed ->
+    ...
+}
+
+// Other options
+imageView.load(R.drawable.image)
+imageView.load("https://anyImage.com/image.png")
+```
+
+---
+
 ### Miscellaneous Tools
 
 ```kotlin
@@ -396,25 +430,6 @@ getContacts()
 getCallLogs()
 getSms()
 getCalenderEvents(numberOfDays = 365)
-```
-
----
-
-### View Tree Utilities
-
-```kotlin
-val allViews = rootView.getViews()
-val allButtons = rootView.getViews(Button::class)
-```
-
----
-
-### Speech Recognition
-
-```kotlin
-listenSpeech(keepListening = true) { result ->
-    // handle voice input
-}
 ```
 
 ---
