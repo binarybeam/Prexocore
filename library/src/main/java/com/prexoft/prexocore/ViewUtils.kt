@@ -612,7 +612,7 @@ fun List<TextView>.setText(list: List<String>) {
     }
 }
 
-fun ImageView.loadImage(source: Any?, @DrawableRes placeholder: Int? = null) {
+fun ImageView.load(source: Any?, @DrawableRes placeholder: Int? = null, onResult: (Boolean) -> Unit = {}) {
     if (source == null) return
     val imageView = this
     if (placeholder != null) this.setImageResource(placeholder)
@@ -620,24 +620,18 @@ fun ImageView.loadImage(source: Any?, @DrawableRes placeholder: Int? = null) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val bitmap = when (source) {
-                is Int -> {
-                    BitmapFactory.decodeResource(context.resources, source)
-                }
+                is Int -> BitmapFactory.decodeResource(context.resources, source)
                 is String -> {
                     if (source.startsWith("http")) {
                         val url = URL(source)
                         val conn = url.openConnection() as HttpURLConnection
                         conn.doInput = true
                         conn.connect()
-                        val inputStream = conn.inputStream
-                        BitmapFactory.decodeStream(inputStream)
-                    } else {
-                        BitmapFactory.decodeFile(source)
+                        BitmapFactory.decodeStream(conn.inputStream)
                     }
+                    else BitmapFactory.decodeFile(source)
                 }
-                is File -> {
-                    BitmapFactory.decodeFile(source.absolutePath)
-                }
+                is File -> BitmapFactory.decodeFile(source.absolutePath)
                 is Uri -> {
                     val inputStream = context.contentResolver.openInputStream(source)
                     BitmapFactory.decodeStream(inputStream)
@@ -648,10 +642,13 @@ fun ImageView.loadImage(source: Any?, @DrawableRes placeholder: Int? = null) {
             bitmap?.let {
                 withContext(Dispatchers.Main) {
                     imageView.setImageBitmap(it)
+                    onResult(true)
                 }
             }
-        } catch (e: Exception) {
+        }
+        catch (e: Exception) {
             e.printStackTrace()
+            onResult(false)
         }
     }
 }
