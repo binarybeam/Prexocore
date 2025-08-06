@@ -506,11 +506,8 @@ fun Context.getPhotosForOlderDevice(maxCount: Int = Int.MAX_VALUE): List<Media> 
 }
 
 @RequiresApi(Build.VERSION_CODES.R)
+@RequiresPermission(Manifest.permission.READ_MEDIA_IMAGES)
 fun Context.getPhotos(maxCount: Int = Int.MAX_VALUE): List<Media> {
-    if (!Environment.isExternalStorageManager()) {
-        goTo(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
-        return emptyList()
-    }
     return postPermissionHandledPhotos(maxCount, 110011)
 }
 
