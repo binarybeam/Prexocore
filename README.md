@@ -60,7 +60,7 @@ And include the dependency in your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.binarybeam:Prexocore:1.3.0")
+    implementation("com.github.binarybeam:Prexocore:1.4.0")
 }
 ```
 
