@@ -11,9 +11,3 @@ enum class SimSlot {
     SIM_2,
     DEFAULT
 }
-
-enum class MediaType {
-    IMAGES,
-    AUDIOS,
-    VIDEOS
-}

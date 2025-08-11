@@ -5,7 +5,9 @@ import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -27,6 +29,7 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.GridLayoutManager
@@ -620,6 +623,8 @@ fun ImageView.load(source: Any?, @DrawableRes placeholder: Int? = null, onResult
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val bitmap = when (source) {
+                is Drawable -> source.toBitmap()
+                is Bitmap -> source
                 is Int -> BitmapFactory.decodeResource(context.resources, source)
                 is String -> {
                     if (source.startsWith("http")) {

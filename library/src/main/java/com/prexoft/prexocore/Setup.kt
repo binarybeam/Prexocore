@@ -3,6 +3,7 @@ package com.prexoft.prexocore
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.activity.ComponentActivity
@@ -16,7 +17,7 @@ fun now(): Long {
     return System.currentTimeMillis()
 }
 
-object EasyTts {
+object Tts {
     private var tts: TextToSpeech? = null
     private var initialized = false
     private var initializing = false
@@ -53,10 +54,10 @@ object EasyTts {
                 if (!localeSupported) {
                     tts?.language = Locale.getDefault()
                 }
-            } else {
-                initialized = false
             }
+            else initialized = false
             initializing = false
+
             val toRun = pendingQueue.toList()
             pendingQueue.clear()
             toRun.forEach { it() }
@@ -134,15 +135,28 @@ class Permission(activity: ComponentActivity) {
     }
 
     fun request(permission: String, callback: (Boolean) -> Unit = {}) {
-        if (currentPermission != null) {
-            throw IllegalStateException("Another permission request is in flight")
+        if (currentPermission != null) after(1.5) { request(permission, callback) }
+        else {
+            currentPermission = permission
+            callbackMap[permission] = callback
+            launcher.launch(permission)
         }
-        currentPermission = permission
-        callbackMap[permission] = callback
-        launcher.launch(permission)
     }
 }
 
 fun optimisedMultiPhotos(photos: List<Pair<Bitmap, String>>): Bitmap {
     return photos.optimisedMultiPhotos()
+}
+
+fun after(seconds: Double, repeat: Int = 1, action: () -> Unit) {
+    if (repeat > 0) {
+        Handler().postDelayed({
+            action()
+            after(seconds, repeat-1, action)
+        }, (seconds*1000).toLong())
+    }
+}
+
+fun after(seconds: Int, repeat: Int = 1, action: () -> Unit) {
+    after(seconds.toDouble(), repeat, action)
 }
