@@ -1,6 +1,7 @@
 package com.prexoft.prexocore.anon
 
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 
 data class Media(
     val content: Bitmap,
@@ -34,4 +35,10 @@ data class Sms(
     val sender: String,
     val body: String,
     val time: Long
+)
+
+data class App(
+    val packageName: String,
+    val appName: String,
+    val icon: Drawable
 )

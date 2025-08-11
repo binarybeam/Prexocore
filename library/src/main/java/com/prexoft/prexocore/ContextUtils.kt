@@ -9,12 +9,14 @@ import android.app.PendingIntent
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.content.Context.CAMERA_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.hardware.camera2.CameraManager
 import android.icu.util.Calendar
 import android.media.MediaPlayer
 import android.net.ConnectivityManager
@@ -43,6 +45,7 @@ import android.view.Window
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.FontRes
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.cardview.widget.CardView
@@ -50,11 +53,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.toColorInt
 import kotlin.reflect.KClass
 import kotlin.toString
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
+import com.prexoft.prexocore.anon.App
 import com.prexoft.prexocore.anon.CalendarEvent
 import com.prexoft.prexocore.anon.Contact
 import com.prexoft.prexocore.anon.Media
@@ -173,18 +178,19 @@ fun Context.share(bitmap: Bitmap, subject: String = "") {
         values.clear()
         values.put(MediaStore.Images.Media.IS_PENDING, 0)
         contentResolver.update(uri, values, null, null)
-
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/*"
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        startActivity(Intent.createChooser(intent, "Share via"))
+        share(uri, "image/*", subject)
     }
 }
 
+fun Context.share(uri: Uri, contentType: String = "*/*", subject: String = "") {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = contentType
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    startActivity(Intent.createChooser(intent, "Share via"))
+}
 
 fun Context.copy(text: String) {
     vibrate(legacyFallback = false, minimal = true)
@@ -226,7 +232,7 @@ fun Context.vibrate(legacyFallback: Boolean = true, minimal: Boolean = false) {
     }
 }
 
-fun Context.alert(title: String?, description: Any?, action: String = "Close", cancelable: Boolean = true, acknowledged: (Boolean) -> Unit = {}) {
+fun Context.alert(title: String?, description: Any?, action: String = "Close", required: Boolean = true, @FontRes fontFamily: Int, acknowledged: (Boolean) -> Unit = {}) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -239,7 +245,15 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", c
     val titleView = dialog.findViewById<TextView>(R.id.title)
     val descView = dialog.findViewById<TextView>(R.id.desc)
 
-    dialog.setCancelable(cancelable)
+    dialog.setCancelable(required)
+    try {
+        val typeFace = ResourcesCompat.getFont(this, fontFamily)
+
+        titleView.typeface = typeFace
+        descView.typeface = typeFace
+        actionView.typeface = typeFace
+    }
+    catch (_: Exception) { }
 
     if (isDarkTheme()) {
         main.setCardBackgroundColor("#212121".toColorInt())
@@ -272,21 +286,21 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", c
     dialog.show()
 }
 
-fun Context.after(seconds: Double, loop: Int = 1, feedback: Boolean = false, action: () -> Unit) {
-    if (loop > 0) {
+fun Context.after(seconds: Double, repeat: Int = 1, feedback: Boolean = false, action: () -> Unit) {
+    if (repeat > 0) {
         Handler(mainLooper).postDelayed({
             action()
             if (feedback) vibrate(legacyFallback = false, minimal = true)
-            after(seconds, loop-1, feedback, action)
+            after(seconds, repeat-1, feedback, action)
         }, (seconds*1000).toLong())
     }
 }
 
-fun Context.after(seconds: Int, loop: Int = 1, feedback: Boolean = false, action: () -> Unit) {
-    after(seconds.toDouble(), loop, feedback, action)
+fun Context.after(seconds: Int, repeat: Int = 1, feedback: Boolean = false, action: () -> Unit) {
+    after(seconds.toDouble(), repeat, feedback, action)
 }
 
-fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, inputType: Int = InputType.TYPE_CLASS_TEXT, onResult: (String) -> Unit) {
+fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, inputType: Int = InputType.TYPE_CLASS_TEXT, @FontRes fontFamily: Int, onResult: (String) -> Unit) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -301,7 +315,15 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
     val inputView = dialog.findViewById<EditText>(R.id.editTextText)
 
     dialog.setCancelable(!required)
-    try { inputView.inputType = inputType }
+    try {
+        val typeFace = ResourcesCompat.getFont(this, fontFamily)
+
+        inputView.inputType = inputType
+        inputView.typeface = typeFace
+        titleView.typeface = typeFace
+        descView.typeface = typeFace
+        actionView.typeface = typeFace
+    }
     catch (_: Exception) { }
 
     if (isDarkTheme()) {
@@ -424,11 +446,11 @@ fun Context.speak(
     locale: Locale = Locale.getDefault(),
     onDone: (() -> Unit)? = null
 ) {
-    EasyTts.speak(this, text.toString(), rate, pitch, locale, onDone)
+    Tts.speak(this, text.toString(), rate, pitch, locale, onDone)
 }
 
 fun Context.shutdownSpeaker() {
-    EasyTts.shutdown()
+    Tts.shutdown()
 }
 
 @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -765,4 +787,25 @@ fun Context.getCalenderEvents(numberOfDays: Int = 365): List<CalendarEvent> {
         }
     }
     return events
+}
+
+@RequiresPermission(Manifest.permission.QUERY_ALL_PACKAGES)
+fun Context.getApps(): List<App> {
+    val apps = mutableListOf<App>()
+
+    for (appInfo in packageManager.getInstalledApplications(PackageManager.GET_META_DATA)) {
+        apps.add(App(
+            packageName = appInfo.packageName,
+            appName = packageManager.getApplicationLabel(appInfo).toString(),
+            icon = packageManager.getApplicationIcon(appInfo)
+        ))
+    }
+    return apps
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun Context.torchMode(enable: Boolean) {
+    val cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
+    val cameraId = cameraManager.cameraIdList[0]
+    cameraManager.setTorchMode(cameraId, enable)
 }
