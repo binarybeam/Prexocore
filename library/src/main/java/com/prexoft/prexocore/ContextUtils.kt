@@ -300,7 +300,7 @@ fun Context.after(seconds: Int, repeat: Int = 1, feedback: Boolean = false, acti
     after(seconds.toDouble(), repeat, feedback, action)
 }
 
-fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, inputType: Int = InputType.TYPE_CLASS_TEXT, @FontRes fontFamily: Int, onResult: (String) -> Unit) {
+fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, inputType: Int = InputType.TYPE_CLASS_TEXT, @FontRes fontFamily: Int? = null, onResult: (String) -> Unit) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -316,13 +316,17 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
 
     dialog.setCancelable(!required)
     try {
-        val typeFace = ResourcesCompat.getFont(this, fontFamily)
+        if (fontFamily != null) {
+            val typeFace = ResourcesCompat.getFont(this, fontFamily)
+            
+            inputView.typeface = typeFace
+            titleView.typeface = typeFace
+            descView.typeface = typeFace
+            actionView.typeface = typeFace
+        }
 
         inputView.inputType = inputType
-        inputView.typeface = typeFace
-        titleView.typeface = typeFace
-        descView.typeface = typeFace
-        actionView.typeface = typeFace
+        
     }
     catch (_: Exception) { }
 
