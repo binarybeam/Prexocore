@@ -232,7 +232,7 @@ fun Context.vibrate(legacyFallback: Boolean = true, minimal: Boolean = false) {
     }
 }
 
-fun Context.alert(title: String?, description: Any?, action: String = "Close", required: Boolean = true, @FontRes fontFamily: Int, acknowledged: (Boolean) -> Unit = {}) {
+fun Context.alert(title: String?, description: Any?, action: String = "Close", required: Boolean = true, @FontRes fontFamily: Int? = null, acknowledged: (Boolean) -> Unit = {}) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -247,11 +247,13 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", r
 
     dialog.setCancelable(required)
     try {
-        val typeFace = ResourcesCompat.getFont(this, fontFamily)
+        if (fontFamily != null) {
+            val typeFace = ResourcesCompat.getFont(this, fontFamily)
 
-        titleView.typeface = typeFace
-        descView.typeface = typeFace
-        actionView.typeface = typeFace
+            titleView.typeface = typeFace
+            descView.typeface = typeFace
+            actionView.typeface = typeFace
+        }
     }
     catch (_: Exception) { }
 
