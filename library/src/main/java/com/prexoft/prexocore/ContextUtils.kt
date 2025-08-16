@@ -16,6 +16,7 @@ import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraManager
 import android.icu.util.Calendar
 import android.media.MediaPlayer
@@ -232,7 +233,7 @@ fun Context.vibrate(legacyFallback: Boolean = true, minimal: Boolean = false) {
     }
 }
 
-fun Context.alert(title: String?, description: Any?, action: String = "Close", required: Boolean = true, @FontRes fontFamily: Int? = null, acknowledged: (Boolean) -> Unit = {}) {
+fun Context.alert(title: String?, description: Any?, action: String = "Close", required: Boolean = true, @FontRes fontFamily: Int, acknowledged: (Boolean) -> Unit = {}) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -247,13 +248,11 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", r
 
     dialog.setCancelable(required)
     try {
-        if (fontFamily != null) {
-            val typeFace = ResourcesCompat.getFont(this, fontFamily)
+        val typeFace = ResourcesCompat.getFont(this, fontFamily)
 
-            titleView.typeface = typeFace
-            descView.typeface = typeFace
-            actionView.typeface = typeFace
-        }
+        titleView.typeface = typeFace
+        descView.typeface = typeFace
+        actionView.typeface = typeFace
     }
     catch (_: Exception) { }
 
@@ -278,7 +277,6 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", r
 
     dialog.setOnCancelListener {
         acknowledged(false)
-        dialog.dismiss()
     }
 
     titleView.text = title.toString()
@@ -320,7 +318,7 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
     try {
         if (fontFamily != null) {
             val typeFace = ResourcesCompat.getFont(this, fontFamily)
-            
+
             inputView.typeface = typeFace
             titleView.typeface = typeFace
             descView.typeface = typeFace
@@ -328,7 +326,7 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
         }
 
         inputView.inputType = inputType
-        
+
     }
     catch (_: Exception) { }
 
@@ -358,7 +356,6 @@ fun Context.input(title: String? = "Enter an input", description: String? = "", 
 
     dialog.setOnCancelListener {
         onResult("")
-        dialog.dismiss()
     }
 
     titleView.text = title.toString()
@@ -796,15 +793,33 @@ fun Context.getCalenderEvents(numberOfDays: Int = 365): List<CalendarEvent> {
 }
 
 @RequiresPermission(Manifest.permission.QUERY_ALL_PACKAGES)
-fun Context.getApps(): List<App> {
+fun Context.getApps(avoidSystemApps: Boolean = false): List<App> {
     val apps = mutableListOf<App>()
 
-    for (appInfo in packageManager.getInstalledApplications(PackageManager.GET_META_DATA)) {
-        apps.add(App(
-            packageName = appInfo.packageName,
-            appName = packageManager.getApplicationLabel(appInfo).toString(),
-            icon = packageManager.getApplicationIcon(appInfo)
-        ))
+    if (avoidSystemApps) {
+        val intent = Intent(Intent.ACTION_MAIN, null).apply {
+            addCategory(Intent.CATEGORY_LAUNCHER)
+        }
+
+        val resolveInfos = packageManager.queryIntentActivities(intent, 0)
+        for (resolveInfo in resolveInfos) {
+            val appInfo = resolveInfo.activityInfo.applicationInfo
+            apps.add(App(
+                    packageName = appInfo.packageName,
+                    appName = packageManager.getApplicationLabel(appInfo).toString(),
+                    icon = packageManager.getApplicationIcon(appInfo)
+                )
+            )
+        }
+    }
+    else {
+        for (appInfo in packageManager.getInstalledApplications(PackageManager.GET_META_DATA)) {
+            apps.add(App(
+                packageName = appInfo.packageName,
+                appName = packageManager.getApplicationLabel(appInfo).toString(),
+                icon = packageManager.getApplicationIcon(appInfo)
+            ))
+        }
     }
     return apps
 }
@@ -814,4 +829,8 @@ fun Context.torchMode(enable: Boolean) {
     val cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
     val cameraId = cameraManager.cameraIdList[0]
     cameraManager.setTorchMode(cameraId, enable)
+}
+
+fun Context.getIconOfInstalledPackage(packageName: String): Drawable {
+    return packageManager.getApplicationIcon(packageName)
 }

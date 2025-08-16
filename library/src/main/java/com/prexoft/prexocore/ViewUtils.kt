@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.SpannableStringBuilder
 import android.text.TextWatcher
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,8 +30,10 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -654,6 +657,48 @@ fun ImageView.load(source: Any?, @DrawableRes placeholder: Int? = null, onResult
         catch (e: Exception) {
             e.printStackTrace()
             onResult(false)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun NestedScrollView.addHapticFeedbackOnScroll() {
+    var lastTrigger = 0
+
+    setOnScrollChangeListener { _: View, _: Int, scrollY: Int, _: Int, _: Int ->
+        val step = 300
+
+        if (kotlin.math.abs(scrollY - lastTrigger) >= step) {
+            lastTrigger = scrollY
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun ScrollView.addHapticFeedbackOnScroll() {
+    var lastTrigger = 0
+
+    setOnScrollChangeListener { _: View, _: Int, scrollY: Int, _: Int, _: Int ->
+        val step = 300
+
+        if (kotlin.math.abs(scrollY - lastTrigger) >= step) {
+            lastTrigger = scrollY
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun RecyclerView.addHapticFeedbackOnScroll() {
+    var lastTrigger = 0
+
+    setOnScrollChangeListener { _: View, _: Int, scrollY: Int, _: Int, _: Int ->
+        val step = 300
+
+        if (kotlin.math.abs(scrollY - lastTrigger) >= step) {
+            lastTrigger = scrollY
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         }
     }
 }
