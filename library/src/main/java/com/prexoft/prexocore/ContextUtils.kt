@@ -42,10 +42,12 @@ import android.speech.SpeechRecognizer
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.text.InputType
+import android.view.View
 import android.view.Window
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.ColorInt
 import androidx.annotation.FontRes
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
@@ -60,10 +62,14 @@ import kotlin.reflect.KClass
 import kotlin.toString
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
+import androidx.core.view.isVisible
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.prexoft.prexocore.anon.App
 import com.prexoft.prexocore.anon.CalendarEvent
 import com.prexoft.prexocore.anon.Contact
 import com.prexoft.prexocore.anon.Media
+import com.prexoft.prexocore.anon.Prexo
 import com.prexoft.prexocore.anon.SimSlot
 import com.prexoft.prexocore.anon.Sms
 import java.io.File
@@ -831,6 +837,117 @@ fun Context.torchMode(enable: Boolean) {
     cameraManager.setTorchMode(cameraId, enable)
 }
 
-fun Context.getIconOfInstalledPackage(packageName: String): Drawable {
-    return packageManager.getApplicationIcon(packageName)
+fun Context.getIconOfInstalledApp(packageName: String): Drawable? {
+    return try {
+        packageManager.getApplicationIcon(packageName)
+    }
+    catch (_: PackageManager.NameNotFoundException) {
+        null
+    }
+}
+
+fun Context.getNameOfInstalledApp(packageName: String): String? {
+    return try {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    }
+    catch (_: PackageManager.NameNotFoundException) {
+        null
+    }
+}
+
+fun Context.selector(list: List<String>, title: String = "Choose one of the option.", description: String = "", required: Boolean = false, @FontRes fontFamily: Int, onSelect: (Int?) -> Unit) {
+    vibrate(legacyFallback = false, minimal = true)
+    val dialog = BottomSheetDialog(this)
+
+    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+    dialog.setContentView(R.layout.selector)
+
+    val titleView = dialog.findViewById<TextView>(R.id.textView32)
+    val descView = dialog.findViewById<TextView>(R.id.textView36)
+    val main = dialog.findViewById<CardView>(R.id.main)
+    val recyclerView = dialog.findViewById<RecyclerView>(R.id.recycler)
+    val typeFace = ResourcesCompat.getFont(this, fontFamily)
+
+    titleView?.typeface = typeFace
+    descView?.typeface = typeFace
+
+    recyclerView?.adapter(list, Prexo.LINEAR_LAYOUT) { pos, icon, textView, item ->
+        icon.isVisible = false
+        textView.text = item
+        textView.typeface = typeFace
+
+        (textView.parent as View).onFirstClick {
+            onSelect(pos)
+            dialog.dismiss()
+        }
+    }?:dialog.cancel()
+
+    dialog.setCancelable(!required)
+    dialog.setOnCancelListener {
+        onSelect(null)
+    }
+
+    if (isDarkTheme()) {
+        main?.setCardBackgroundColor("#000000".toColorInt())
+        titleView?.setTextColor("#ffffff".toColorInt())
+    }
+    else {
+        main?.setCardBackgroundColor("#ffffff".toColorInt())
+        titleView?.setTextColor("#000000".toColorInt())
+    }
+
+    titleView?.text = title
+    descView?.text = description.ifBlank { if (required) "Required" else "Optional" }
+    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    dialog.show()
+}
+
+fun Context.selectorWithIcon(list: List<Pair<String, Any?>>, title: String = "Choose one of the option.", description: String = "", required: Boolean = false, @FontRes fontFamily: Int, onSelect: (Int?) -> Unit) {
+    vibrate(legacyFallback = false, minimal = true)
+    val dialog = BottomSheetDialog(this)
+
+    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+    dialog.setContentView(R.layout.selector)
+
+    val titleView = dialog.findViewById<TextView>(R.id.textView32)
+    val descView = dialog.findViewById<TextView>(R.id.textView36)
+    val main = dialog.findViewById<CardView>(R.id.main)
+    val recyclerView = dialog.findViewById<RecyclerView>(R.id.recycler)
+    val typeFace = ResourcesCompat.getFont(this, fontFamily)
+
+    titleView?.typeface = typeFace
+    descView?.typeface = typeFace
+
+    recyclerView?.adapter(list, Prexo.LINEAR_LAYOUT) { pos, icon, textView, item ->
+        icon.load(item.second)
+        icon.scaleX = 0.9f
+        icon.scaleY = 0.9f
+
+        textView.text = item.first
+        textView.typeface = typeFace
+
+        (textView.parent as View).onFirstClick {
+            onSelect(pos)
+            dialog.dismiss()
+        }
+    }?:dialog.cancel()
+
+    dialog.setCancelable(!required)
+    dialog.setOnCancelListener {
+        onSelect(null)
+    }
+
+    if (isDarkTheme()) {
+        main?.setCardBackgroundColor("#000000".toColorInt())
+        titleView?.setTextColor("#ffffff".toColorInt())
+    }
+    else {
+        main?.setCardBackgroundColor("#ffffff".toColorInt())
+        titleView?.setTextColor("#000000".toColorInt())
+    }
+
+    titleView?.text = title
+    descView?.text = description.ifBlank { if (required) "Required" else "Optional" }
+    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    dialog.show()
 }
