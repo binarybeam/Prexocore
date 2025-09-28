@@ -573,6 +573,45 @@ fun ScrollView.onScroll (
     }
 }
 
+fun NestedScrollView.onScroll (
+    onTop: () -> Unit = {},
+    onBottom: () -> Unit = {},
+    other: () -> Unit = {},
+    percentCallback: ((Int) -> Unit)? = null
+) {
+    var lastState = 0
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            val maxScroll = max(getChildAt(0).measuredHeight - height, 1)
+            val percent = ((scrollY.toFloat() / maxScroll) * 100).roundToInt().coerceIn(0, 100)
+            percentCallback?.invoke(percent)
+
+            when {
+                scrollY == 0 -> {
+                    if (lastState != 0) {
+                        lastState = 0
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onTop()
+                    }
+                }
+                scrollY >= maxScroll -> {
+                    if (lastState != 1) {
+                        lastState = 1
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onBottom()
+                    }
+                }
+                else -> {
+                    if (lastState != 2) {
+                        lastState = 2
+                        other()
+                    }
+                }
+            }
+        }
+    }
+}
+
 fun HorizontalScrollView.onScroll (
     onTop: () -> Unit = {},
     onBottom: () -> Unit = {},
@@ -610,6 +649,55 @@ fun HorizontalScrollView.onScroll (
             }
         }
     }
+}
+
+fun RecyclerView.onScroll(
+    onTop: () -> Unit = {},
+    onBottom: () -> Unit = {},
+    other: () -> Unit = {},
+    percentCallback: ((Int) -> Unit)? = null
+) {
+    var lastState = -1
+
+    addOnScrollListener(object : RecyclerView.OnScrollListener() {
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            val layoutManager = recyclerView.layoutManager ?: return
+
+            val verticalScrollRange = computeVerticalScrollRange()
+            val verticalScrollOffset = computeVerticalScrollOffset()
+            val verticalScrollExtent = computeVerticalScrollExtent()
+
+            val maxScroll = verticalScrollRange - verticalScrollExtent
+            val percent = if (maxScroll > 0) {
+                ((verticalScrollOffset.toFloat() / maxScroll) * 100).roundToInt().coerceIn(0, 100)
+            } else 0
+
+            percentCallback?.invoke(percent)
+
+            when {
+                verticalScrollOffset == 0 -> {
+                    if (lastState != 0) {
+                        lastState = 0
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onTop()
+                    }
+                }
+                verticalScrollOffset >= maxScroll -> {
+                    if (lastState != 1) {
+                        lastState = 1
+                        context.vibrate(legacyFallback = false, minimal = true)
+                        onBottom()
+                    }
+                }
+                else -> {
+                    if (lastState != 2) {
+                        lastState = 2
+                        other()
+                    }
+                }
+            }
+        }
+    })
 }
 
 fun List<TextView>.setText(list: List<String>) {
@@ -684,6 +772,20 @@ fun ScrollView.addHapticFeedbackOnScroll() {
 
         if (kotlin.math.abs(scrollY - lastTrigger) >= step) {
             lastTrigger = scrollY
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun HorizontalScrollView.addHapticFeedbackOnScroll() {
+    var lastTrigger = 0
+
+    setOnScrollChangeListener { _: View, scrollX: Int, _: Int, _: Int, _: Int ->
+        val step = 300
+
+        if (kotlin.math.abs(scrollX - lastTrigger) >= step) {
+            lastTrigger = scrollX
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         }
     }
