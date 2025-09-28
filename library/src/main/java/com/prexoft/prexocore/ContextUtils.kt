@@ -1,6 +1,7 @@
 package com.prexoft.prexocore
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.app.NotificationChannel
@@ -16,6 +17,7 @@ import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraManager
 import android.icu.util.Calendar
@@ -45,6 +47,7 @@ import android.text.InputType
 import android.view.View
 import android.view.Window
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.ColorInt
@@ -239,7 +242,7 @@ fun Context.vibrate(legacyFallback: Boolean = true, minimal: Boolean = false) {
     }
 }
 
-fun Context.alert(title: String?, description: Any?, action: String = "Close", required: Boolean = true, @FontRes fontFamily: Int, acknowledged: (Boolean) -> Unit = {}) {
+fun Context.alert(title: String?, description: Any?, positiveAction: String = "Got it", negativeAction: String = "", required: Boolean = true, @FontRes fontFamily: Int? = null, acknowledged: (Boolean?) -> Unit = {}) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = Dialog(this)
 
@@ -247,32 +250,35 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", r
     dialog.setContentView(R.layout.alert)
 
     val button = dialog.findViewById<CardView>(R.id.okay)
+    val button2 = dialog.findViewById<CardView>(R.id.okay2)
     val actionView = dialog.findViewById<TextView>(R.id.textView)
+    val actionView2 = dialog.findViewById<TextView>(R.id.textView2)
     val main = dialog.findViewById<CardView>(R.id.main)
     val titleView = dialog.findViewById<TextView>(R.id.title)
     val descView = dialog.findViewById<TextView>(R.id.desc)
 
     dialog.setCancelable(required)
-    try {
+    if (fontFamily != null) {
         val typeFace = ResourcesCompat.getFont(this, fontFamily)
 
         titleView.typeface = typeFace
         descView.typeface = typeFace
         actionView.typeface = typeFace
     }
-    catch (_: Exception) { }
 
     if (isDarkTheme()) {
-        main.setCardBackgroundColor("#212121".toColorInt())
-        button.setCardBackgroundColor("#ffffff".toColorInt())
-        actionView.setTextColor("#000000".toColorInt())
+        main.setCardBackgroundColor("#202020".toColorInt())
+        actionView.setTextColor("#ffffff".toColorInt())
         titleView.setTextColor("#ffffff".toColorInt())
     }
-    else {
-        main.setCardBackgroundColor("#ffffff".toColorInt())
-        button.setCardBackgroundColor("#000000".toColorInt())
-        actionView.setTextColor("#ffffff".toColorInt())
-        titleView.setTextColor("#000000".toColorInt())
+
+    if (negativeAction.isNotBlank()) {
+        button2.visibility = View.VISIBLE
+        actionView2.text = negativeAction
+        button2.onClick {
+            acknowledged(false)
+            dialog.dismiss()
+        }
     }
 
     main.onClick { }
@@ -282,13 +288,80 @@ fun Context.alert(title: String?, description: Any?, action: String = "Close", r
     }
 
     dialog.setOnCancelListener {
-        acknowledged(false)
+        acknowledged(null)
     }
 
     titleView.text = title.toString()
     descView.text = description.toString()
-    actionView.text = action
+    actionView.text = positiveAction
     dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    dialog.show()
+}
+
+fun Context.input(title: String = "Choose one.", description: String = "", hint: String = "Type here...", icon: Any? = null, required: Boolean = false, @FontRes fontFamily: Int? = null, onResult: (String) -> Unit) {
+    vibrate(legacyFallback = false, minimal = true)
+    val dialog = BottomSheetDialog(this)
+
+    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+    dialog.setContentView(R.layout.input)
+
+    val titleView = dialog.findViewById<TextView>(R.id.textView15)
+    val descView = dialog.findViewById<TextView>(R.id.textView7)
+    val inputView = dialog.findViewById<EditText>(R.id.editText)
+    val button = dialog.findViewById<CardView>(R.id.update)
+    val button2 = dialog.findViewById<CardView>(R.id.more)
+    val bT1 = dialog.findViewById<TextView>(R.id.bT2)
+    val bT2 = dialog.findViewById<TextView>(R.id.bT1)
+    val iconView = dialog.findViewById<ImageView>(R.id.imageView13)
+    val arrow = dialog.findViewById<ImageView>(R.id.arrow)
+    var typeFace: Typeface?
+
+    if (fontFamily != null) {
+        typeFace = ResourcesCompat.getFont(this, fontFamily)
+        titleView?.typeface = typeFace
+        descView?.typeface = typeFace
+        inputView?.typeface = typeFace
+        bT1?.typeface = typeFace
+        bT2?.typeface = typeFace
+    }
+
+    if (icon != null) iconView?.load(icon)
+    if (required) {
+        dialog.setCancelable(false)
+        button2?.isVisible = false
+    }
+
+    dialog.setOnCancelListener {
+        onResult("")
+    }
+
+    button2?.onFirstClick {
+        dialog.dismiss()
+        onResult("")
+    }
+
+    button?.onSafeClick {
+        if ((inputView?.text?:"").isEmpty()) return@onSafeClick
+        dialog.dismiss()
+        onResult(inputView?.text.toString())
+    }
+
+    dialog.setOnShowListener {
+        inputView?.focus()
+    }
+
+    if (isDarkTheme()) {
+        titleView?.setTextColor("#ffffff".toColorInt())
+        inputView?.setTextColor("#ffffff".toColorInt())
+        button?.setCardBackgroundColor("#ffffff".toColorInt())
+        bT1?.setTextColor("#000000".toColorInt())
+        bT2?.setTextColor("#ffffff".toColorInt())
+        arrow?.setColorFilter("#000000".toColorInt())
+    }
+
+    titleView?.text = title
+    inputView?.hint = hint
+    descView?.text = description.ifBlank { if (required) "Required" else "Optional" }
     dialog.show()
 }
 
@@ -304,71 +377,6 @@ fun Context.after(seconds: Double, repeat: Int = 1, feedback: Boolean = false, a
 
 fun Context.after(seconds: Int, repeat: Int = 1, feedback: Boolean = false, action: () -> Unit) {
     after(seconds.toDouble(), repeat, feedback, action)
-}
-
-fun Context.input(title: String? = "Enter an input", description: String? = "", hint: String? = "Type here...", required: Boolean = false, inputType: Int = InputType.TYPE_CLASS_TEXT, @FontRes fontFamily: Int? = null, onResult: (String) -> Unit) {
-    vibrate(legacyFallback = false, minimal = true)
-    val dialog = Dialog(this)
-
-    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-    dialog.setContentView(R.layout.input)
-
-    val button = dialog.findViewById<CardView>(R.id.okay)
-    val actionView = dialog.findViewById<TextView>(R.id.textView)
-    val main = dialog.findViewById<CardView>(R.id.main)
-    val titleView = dialog.findViewById<TextView>(R.id.title)
-    val descView = dialog.findViewById<TextView>(R.id.desc)
-    val inputView = dialog.findViewById<EditText>(R.id.editTextText)
-
-    dialog.setCancelable(!required)
-    try {
-        if (fontFamily != null) {
-            val typeFace = ResourcesCompat.getFont(this, fontFamily)
-
-            inputView.typeface = typeFace
-            titleView.typeface = typeFace
-            descView.typeface = typeFace
-            actionView.typeface = typeFace
-        }
-
-        inputView.inputType = inputType
-
-    }
-    catch (_: Exception) { }
-
-    if (isDarkTheme()) {
-        main.setCardBackgroundColor("#212121".toColorInt())
-        button.setCardBackgroundColor("#ffffff".toColorInt())
-        actionView.setTextColor("#000000".toColorInt())
-        titleView.setTextColor("#ffffff".toColorInt())
-        inputView.setTextColor("#ffffff".toColorInt())
-    }
-    else {
-        main.setCardBackgroundColor("#ffffff".toColorInt())
-        button.setCardBackgroundColor("#000000".toColorInt())
-        actionView.setTextColor("#ffffff".toColorInt())
-        titleView.setTextColor("#000000".toColorInt())
-        inputView.setTextColor("#000000".toColorInt())
-    }
-
-    main.onClick { }
-    button.onClick {
-        if (required && inputView.text.toString().isBlank()) safeToast("This field is required.", gapInSeconds = 5)
-        else {
-            onResult(inputView.text.toString())
-            dialog.dismiss()
-        }
-    }
-
-    dialog.setOnCancelListener {
-        onResult("")
-    }
-
-    titleView.text = title.toString()
-    inputView.hint = hint.toString()
-    descView.text = description.toString().ifBlank { if (required) "Required" else "Optional" }
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-    dialog.show()
 }
 
 @RequiresApi(Build.VERSION_CODES.M)
@@ -393,9 +401,9 @@ fun Context.isDarkTheme(): Boolean {
 @RequiresApi(Build.VERSION_CODES.N)
 @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 fun Context.postNotification(
-    title: String,
+    title: String = "Prexocore Notifications",
     content: String,
-    icon: Int,
+    icon: Int = R.drawable.at,
     notificationId: Int = 1,
     launchIntent: Intent? = null,
     channelId: String = "channel_1",
@@ -855,7 +863,7 @@ fun Context.getNameOfInstalledApp(packageName: String): String? {
     }
 }
 
-fun Context.selector(list: List<String>, title: String = "Choose one of the option.", description: String = "", required: Boolean = false, @FontRes fontFamily: Int, onSelect: (Int?) -> Unit) {
+fun Context.selector(list: List<String>, title: String = "Choose one.", description: String = "", required: Boolean = false, @FontRes fontFamily: Int? = null, onSelect: (Int?) -> Unit) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = BottomSheetDialog(this)
 
@@ -864,17 +872,19 @@ fun Context.selector(list: List<String>, title: String = "Choose one of the opti
 
     val titleView = dialog.findViewById<TextView>(R.id.textView32)
     val descView = dialog.findViewById<TextView>(R.id.textView36)
-    val main = dialog.findViewById<CardView>(R.id.main)
     val recyclerView = dialog.findViewById<RecyclerView>(R.id.recycler)
-    val typeFace = ResourcesCompat.getFont(this, fontFamily)
+    var typeFace: Typeface? = null
 
-    titleView?.typeface = typeFace
-    descView?.typeface = typeFace
+    if (fontFamily != null) {
+        typeFace = ResourcesCompat.getFont(this, fontFamily)
+        titleView?.typeface = typeFace
+        descView?.typeface = typeFace
+    }
 
     recyclerView?.adapter(list, Prexo.LINEAR_LAYOUT) { pos, icon, textView, item ->
         icon.isVisible = false
         textView.text = item
-        textView.typeface = typeFace
+        if (typeFace != null) textView.typeface = typeFace
 
         (textView.parent as View).onFirstClick {
             onSelect(pos)
@@ -888,21 +898,15 @@ fun Context.selector(list: List<String>, title: String = "Choose one of the opti
     }
 
     if (isDarkTheme()) {
-        main?.setCardBackgroundColor("#000000".toColorInt())
         titleView?.setTextColor("#ffffff".toColorInt())
-    }
-    else {
-        main?.setCardBackgroundColor("#ffffff".toColorInt())
-        titleView?.setTextColor("#000000".toColorInt())
     }
 
     titleView?.text = title
     descView?.text = description.ifBlank { if (required) "Required" else "Optional" }
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
     dialog.show()
 }
 
-fun Context.selectorWithIcon(list: List<Pair<String, Any?>>, title: String = "Choose one of the option.", description: String = "", required: Boolean = false, @FontRes fontFamily: Int, onSelect: (Int?) -> Unit) {
+fun Context.selectorWithIcon(list: List<Pair<String, Any?>>, title: String = "Choose one.", description: String = "", required: Boolean = false, @FontRes fontFamily: Int? = null, onSelect: (Int?) -> Unit) {
     vibrate(legacyFallback = false, minimal = true)
     val dialog = BottomSheetDialog(this)
 
@@ -911,12 +915,14 @@ fun Context.selectorWithIcon(list: List<Pair<String, Any?>>, title: String = "Ch
 
     val titleView = dialog.findViewById<TextView>(R.id.textView32)
     val descView = dialog.findViewById<TextView>(R.id.textView36)
-    val main = dialog.findViewById<CardView>(R.id.main)
     val recyclerView = dialog.findViewById<RecyclerView>(R.id.recycler)
-    val typeFace = ResourcesCompat.getFont(this, fontFamily)
+    var typeFace: Typeface? = null
 
-    titleView?.typeface = typeFace
-    descView?.typeface = typeFace
+    if (fontFamily != null) {
+        typeFace = ResourcesCompat.getFont(this, fontFamily)
+        titleView?.typeface = typeFace
+        descView?.typeface = typeFace
+    }
 
     recyclerView?.adapter(list, Prexo.LINEAR_LAYOUT) { pos, icon, textView, item ->
         icon.load(item.second)
@@ -924,7 +930,7 @@ fun Context.selectorWithIcon(list: List<Pair<String, Any?>>, title: String = "Ch
         icon.scaleY = 0.9f
 
         textView.text = item.first
-        textView.typeface = typeFace
+        if (typeFace != null) textView.typeface = typeFace
 
         (textView.parent as View).onFirstClick {
             onSelect(pos)
@@ -938,16 +944,10 @@ fun Context.selectorWithIcon(list: List<Pair<String, Any?>>, title: String = "Ch
     }
 
     if (isDarkTheme()) {
-        main?.setCardBackgroundColor("#000000".toColorInt())
         titleView?.setTextColor("#ffffff".toColorInt())
-    }
-    else {
-        main?.setCardBackgroundColor("#ffffff".toColorInt())
-        titleView?.setTextColor("#000000".toColorInt())
     }
 
     titleView?.text = title
     descView?.text = description.ifBlank { if (required) "Required" else "Optional" }
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
     dialog.show()
 }
